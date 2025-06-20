@@ -1,0 +1,33 @@
+{{ define "chat" }}
+	<!DOCTYPE html>
+	<html>
+	<head>
+			<title>MsgKas: {{ .RoomID }}</title>
+			<script src="https://gitcdn.ir/library/jquery/3.5.1/jquery-3.5.1.min.js" ></script>
+			<script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js" ></script>
+	</head>
+	<body class="bg-slate-900 text-white grid h-screen p-1 xl:p-6" style="grid-template-rows: 1fr 60px; ">
+		<div id="messages" class="flex flex-col overflow-auto">
+			<div class="text-slate-300 text-2xl p-4 text-center">Welcome to {{ .RoomID }} </div>
+		</div>
+
+		<div class="grid w-full h-full relative">
+			<form onsubmit="handleSubmit(event)" class="flex border border-solid border-sky-200 rounded-md overflow-hidden relative">
+				<input class="grow p-2" placeholder="Type here..." id="msgbox"></input>
+				<button type="submit" class="p-2 hover:bg-sky-500/20 transition-all duration-300 ">Send</button>
+
+			</form>
+			<div id="conn-stat" class="absolute bottom-full right-0 px-1 bg-sky-300/20 text-sky-600">Connecting...</div>
+		</div>
+
+		<script>
+			window.chatdata = {
+				room_id: {{ .RoomID }},
+				user_id: {{ .UserID }},
+				username: {{ .Username }},
+			}
+		</script>
+		<script src="/static/index.js" ></script>
+	</body>
+	</html>
+{{ end }}

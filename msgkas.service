@@ -1,0 +1,14 @@
+
+[Unit]
+Description=Message Kaskade
+Documentation=Go Server for Message Kaskade
+After=network.target
+
+[Service]
+ExecStart=/home/ubuntu/msgkas/server
+Restart=always
+WorkingDirectory=/home/ubuntu/msgkas
+Environment="PORT=80"
+
+[Install]
+WantedBy=multi-user.target

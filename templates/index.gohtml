@@ -1,0 +1,49 @@
+{{ define "home_logged_in" }}
+	<div>
+		Logged in as {{ .Username }} ({{ .UserID }})
+	</div>
+{{ end }}
+{{ define "home_login" }}
+	<div class="flex gap-2 flex-col">
+		<label for="username">
+			Username
+		</label>
+		<input name="username" class="bg-sky-300/60 hover:bg-sky-300/10
+		transition-all duration-300 rounded-md p-2"></input>
+	</div>
+{{ end }}
+{{ define "home" }}
+	<!DOCTYPE html>
+	<html>
+	<head>
+			<title>Message Kaskade</title>
+			<script src="https://gitcdn.ir/library/jquery/3.5.1/jquery-3.5.1.min.js"></script>
+			<script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js"></script>
+	</head>
+	<body class="flex items-center justify-center py-4 px-2 w-screen h-screen bg-slate-900 text-white">
+		<form method="post" to="/login" 
+			class="rounded-sm bg-sky-200/30 flex flex-col gap-2 p-4">
+			{{if .IsLoggedIn}}
+				{{ template "home_logged_in" . }}
+			{{else}}
+				{{ template "home_login" }}
+			{{end}}
+			<div class="flex gap-2 flex-col">
+				<label for="roomid" value="{{ .RoomID }}">
+					Room ID
+				</label>
+				<input name="roomid" class="bg-sky-300/60 hover:bg-sky-300/10
+				transition-all duration-300 rounded-md p-2"></div>
+			</div>
+			
+			{{ if .Error }}
+				<p class="text-red-400">
+					{{ .ErrorMessage }}
+				</p>
+			{{ end }}
+			<button type="submit" 
+				class="p-2 hover:bg-sky-500/20 transition-all duration-300 rounded-lg">Enter</button>
+		</form>
+	</body>
+	</html>
+{{ end }}

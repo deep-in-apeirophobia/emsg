@@ -30,13 +30,13 @@ function getUserColor(id) {
 function handleJoinMessage(msg) {
   const newmsg = document.createElement("div");
   newmsg.classList.add("text-center", "text-gray-400", "text-sm", "p-1");
-  newmsg.innerText(msg.message);
+  newmsg.innerText = msg.message;
   msgcnt.appendChild(newmsg);
 }
 function handleLeaveMessage(msg) {
   const newmsg = document.createElement("div");
   newmsg.classList.add("text-center", "text-red-400", "text-sm", "p-1");
-  newmsg.innerText(msg.message);
+  newmsg.innerText = msg.message;
   msgcnt.appendChild(newmsg);
 }
 

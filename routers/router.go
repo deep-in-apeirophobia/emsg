@@ -57,6 +57,7 @@ func handleWebsocketReq(c *websocket.Conn) {
 		} else {
 			handlers.CreateClientHUid(roomid)[0] = newclient
 		}
+		cl = newclient
 	}
 
 	cnn := handlers.NewConnectionContext(c, cl, conn, roomid, userid, username)

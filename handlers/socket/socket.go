@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2/log"
+	"msg.atrin.dev/mskas/helpers"
 	"msg.atrin.dev/mskas/types"
 
 	"encoding/json"
@@ -64,7 +65,10 @@ func NewConnectionContext(
 
 func (c *connectionContext) sendJoinMessage() error {
 	if joinTemp == nil {
-		join_tmpl, err := template.New("joinTemplate").Parse("{{.username}}({{.userid | truncate 7}}) joined the chat!")
+		join_tmpl, err := template.
+			New("joinTemplate").
+			Funcs(*helpers.GetFuncMap()).
+			Parse("{{.Username}} ({{.UserID | truncate 7}}) joined the chat!")
 
 		joinTemp = join_tmpl
 
@@ -73,7 +77,13 @@ func (c *connectionContext) sendJoinMessage() error {
 			return err
 		}
 	}
-	msg, err := executeTemplate(joinTemp, c)
+	msg, err := executeTemplate(joinTemp, struct {
+		Username string
+		UserID   string
+	}{
+		Username: c.username,
+		UserID:   c.userid,
+	})
 
 	if err != nil {
 		log.Error("Failed to generate join message", c, err)
@@ -88,8 +98,11 @@ func (c *connectionContext) sendJoinMessage() error {
 }
 
 func (c *connectionContext) sendLeaveMessage() error {
-	if joinTemp == nil {
-		leave_tmpl, err := template.New("leaveTemplate").Parse("{{.username}}({{.userid | truncate 7}}) left the chat!")
+	if leaveTemp == nil {
+		leave_tmpl, err := template.
+			New("leaveTemplate").
+			Funcs(*helpers.GetFuncMap()).
+			Parse("{{.Username}} ({{.UserID | truncate 7}}) left the chat!")
 
 		leaveTemp = leave_tmpl
 
@@ -98,7 +111,13 @@ func (c *connectionContext) sendLeaveMessage() error {
 			return err
 		}
 	}
-	msg, err := executeTemplate(leaveTemp, c)
+	msg, err := executeTemplate(leaveTemp, struct {
+		Username string
+		UserID   string
+	}{
+		Username: c.username,
+		UserID:   c.userid,
+	})
 
 	if err != nil {
 		log.Error("Failed to generate leave message", c, err)
@@ -128,15 +147,18 @@ func (c *connectionContext) HandleWsConn(
 	workers <- struct{}{}
 	defer func() {
 		log.Info("Closing connection", c.roomid, c.userid)
+		if !c.conn.IsClosing {
+			c.c.Close()
+			log.Info("closed")
+		}
+
 		c.cl.Conns = slices.DeleteFunc(c.cl.Conns, func(x *types.Connection) bool {
 			return x.IsClosing
 		})
-		log.Info("Removed from list")
-		c.c.Close()
-		log.Info("closed")
+		log.Debug("Connection Removed from client list")
 
 		c.sendLeaveMessage()
-		log.Info("Messasge sent")
+		log.Debug("Leave Messasge sent")
 
 		<-workers
 	}()

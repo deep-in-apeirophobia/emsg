@@ -5,7 +5,7 @@ Documentation=Go Server for Emergency Message Kaskade
 After=network.target
 
 [Service]
-ExecStart=/home/ubuntu/emsgkas/server
+ExecStart=/home/ubuntu/emsgkas/emsgkas
 Restart=always
 WorkingDirectory=/home/ubuntu/emsgkas
 Environment="PORT=80"

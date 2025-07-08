@@ -1,0 +1,113 @@
+name: Go Build and Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build:
+    name: Build and Upload Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Get Release Version
+        id: get_version
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_REF##refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.RELEASE_VERSION }}
+          release_name: Release ${{ steps.get_version.outputs.RELEASE_VERSION }}
+          draft: false
+          prerelease: false
+
+      - name: Build for Linux (AMD64)
+        run: |
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o emsgkas .
+          tar -czvf emsgkas-linux-amd64.tar.gz emsgkas static/ templates/
+
+      - name: Upload Linux (AMD64) Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./emsgkas-linux-amd64.tar.gz
+          asset_name: emsgkas-linux-amd64.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Build for Linux (ARM64)
+        run: |
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o emsgkas .
+          tar -czvf emsgkas-linux-arm64.tar.gz emsgkas static/ templates/
+
+      - name: Upload Linux (ARM64) Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./emsgkas-linux-arm64.tar.gz
+          asset_name: emsgkas-linux-arm64.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Build for Windows (AMD64)
+        run: |
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o emsgkas.exe .
+          zip emsgkas-windows-amd64.zip emsgkas static/ templates/
+
+      - name: Upload Windows (AMD64) Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./emsgkas-windows-amd64.zip
+          asset_name: emsgkas-windows-amd64.zip
+          asset_content_type: application/zip
+
+      - name: Build for macOS (AMD64)
+        run: |
+          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -o emsgkas .
+          tar -czvf emsgkas-darwin-amd64.tar.gz emsgkas static/ templates/
+
+      - name: Upload macOS (AMD64) Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./emsgkas-darwin-amd64.tar.gz
+          asset_name: emsgkas-darwin-amd64.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Build for macOS (ARM64)
+        run: |
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -o emsgkas .
+          tar -czvf emsgkas-darwin-arm64.tar.gz emsgkas static/ templates/
+
+      - name: Upload macOS (ARM64) Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./emsgkas-darwin-arm64.tar.gz
+          asset_name: emsgkas-darwin-arm64.tar.gz
+          asset_content_type: application/gzip

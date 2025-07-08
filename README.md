@@ -4,11 +4,11 @@
 
 An emergency, quick-setup, no requirements messenger to use when you cannot access the internet.
 First setup a folder on the server and upload the server binary, along with
-the `static` and `templates` folder.
+the `static` and `templates` folder(All available in the release bundle).
 To run it, you just need to upload the binary to the server and run:
 
 ```bash
-PORT=4000 ./server
+PORT=4000 ./emsgkas
 ```
 
 ## Running as a Service

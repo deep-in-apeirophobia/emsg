@@ -45,7 +45,15 @@ function handleUserMessage(msg) {
   newmsg.classList.add("text-base", "text-white", "p-1");
 
   if (msg.user_id === window.chatdata.user_id) {
-    newmsg.classList.add("bg-slate-700", "hover:bg-slate-600");
+    newmsg.classList.add(
+      "hover:bg-blue-600/20",
+      "bg-blue-600/10",
+      "rounded-md",
+      "bg-clip-padding",
+      "backdrop-filter",
+      "backdrop-blur-2xl",
+      "bg-opacity-10",
+    );
   } else {
     newmsg.classList.add("hover:bg-slate-800");
   }
@@ -146,6 +154,26 @@ function handleSubmit(e) {
   );
 
   input.value = "";
+}
+
+function handleKeyPressEvent(e) {
+  const input = document.getElementById("msgbox");
+  if (e.key === "Enter") {
+    if (e.metaKey || e.ctrlKey) {
+      e.preventDefault();
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+
+      input.value =
+        input.value.substring(0, start) + "\n" + input.value.substring(end);
+
+      input.selectionStart = input.selectionEnd = start + 1;
+    } else {
+      // handleSubmit(e);
+      document.getElementById("msgform").requestSubmit();
+      e.preventDefault();
+    }
+  }
 }
 
 init();

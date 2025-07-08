@@ -18,11 +18,11 @@
 	<head>
 			<title>Message Kaskade</title>
 			<script src="https://gitcdn.ir/library/jquery/3.5.1/jquery-3.5.1.min.js"></script>
+			<meta name="viewport" content="width=device-width, initial-scale=1">
 			<script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js"></script>
 	</head>
-	<body class="flex items-center justify-center py-4 px-2 w-screen h-screen bg-slate-900 text-white">
-		<form method="post" to="/login" 
-			class="rounded-sm bg-sky-200/30 flex flex-col gap-2 p-4">
+	<body class="flex items-center justify-center py-4 px-2 min-h-screen bg-slate-900 text-white">
+		<form method="post" to="/login" class="w-full max-w-md rounded-sm bg-sky-200/30 flex flex-col gap-2 p-4 mx-auto"> 
 			{{if .IsLoggedIn}}
 				{{ template "home_logged_in" . }}
 			{{else}}

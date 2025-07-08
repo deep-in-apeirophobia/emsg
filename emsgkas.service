@@ -1,0 +1,14 @@
+
+[Unit]
+Description=EMessage Kaskade
+Documentation=Go Server for Emergency Message Kaskade
+After=network.target
+
+[Service]
+ExecStart=/home/ubuntu/emsgkas/server
+Restart=always
+WorkingDirectory=/home/ubuntu/emsgkas
+Environment="PORT=80"
+
+[Install]
+WantedBy=multi-user.target

@@ -66,7 +66,7 @@ func MessageLoop() {
 		if !ok {
 			continue
 		}
-		log.Info("Broadcasting message to ", len(cls), " ", msg.Message)
+		// log.Debug("Broadcasting message to ", len(cls), " ", msg.Message)
 
 		for _, c := range cls {
 			err := inform_connections(c, dataBytes)

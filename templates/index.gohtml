@@ -31,11 +31,11 @@
 				{{ template "home_login" }}
 			{{end}}
 			<div class="flex gap-2 flex-col">
-				<label for="roomid" value="{{ .RoomID }}">
+				<label for="roomid">
 					Room ID
 				</label>
 				<input name="roomid" class="bg-sky-300/10 hover:bg-sky-300/20
-				transition-all duration-300 rounded-md p-2"></div>
+				transition-all duration-300 rounded-md p-2" value="{{ .RoomID }}"></div>
 			</div>
 			
 			{{ if .Error }}

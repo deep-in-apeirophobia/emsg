@@ -187,10 +187,13 @@ func homeHandler(c *fiber.Ctx) error {
 
 	sessionid := c.Cookies("Session")
 
+	roomid := c.Query("rid")
+
 	username, ok := sessions[sessionid]
 	if sessionid == "" || !ok {
 		err := tpl.ExecuteTemplate(c.Response().BodyWriter(), "home", LoginData{
 			IsLoggedIn: false,
+			RoomID: roomid,
 		})
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
@@ -203,6 +206,7 @@ func homeHandler(c *fiber.Ctx) error {
 		IsLoggedIn: true,
 		Username:   username,
 		UserID:     sessionid,
+		RoomID: 		roomid,
 	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())

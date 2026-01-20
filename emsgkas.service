@@ -9,6 +9,9 @@ ExecStart=/home/ubuntu/emsgkas/emsgkas
 Restart=always
 WorkingDirectory=/home/ubuntu/emsgkas
 Environment="PORT=80"
+Environment="TLS_ENABLED=true"
+Environment="TLS_STRATEGY=generate"
+Environment="TLS_DOMAIN=127.0.0.1"
 
 [Install]
 WantedBy=multi-user.target

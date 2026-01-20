@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -11,6 +12,9 @@ import (
 
 	handlers "msg.atrin.dev/mskas/handlers/socket"
 	"msg.atrin.dev/mskas/routers"
+	"msg.atrin.dev/mskas/helpers"
+
+	// "crypto/tls"
 )
 
 func init_sentry(app *fiber.App) {
@@ -54,19 +58,38 @@ func init_sentry(app *fiber.App) {
 
 }
 
+func generateConfig() (*fiber.Config, error) {
+	return &fiber.Config{}, nil
+}
+
 func main() {
 	workers := make(chan struct{}, 100)
 	routers.SetWorkers(workers)
 
 	go handlers.MessageLoop()
 
-	app := fiber.New()
+	config, err := generateConfig()
+	if err != nil {
+		log.Fatalln("Failed to generate config", err)
+		panic(err)
+	}
+	app := fiber.New(*config)
 
 	// init_sentry(app)
 
 	routers.SetupRouters(app)
 
-	if err := app.Listen(":" + os.Getenv("PORT")); err != nil {
-		panic(err)
+	cert, err := helpers.GetCertificate()
+	if err != nil || cert == nil {
+		log.Fatalln("Failed to load certificate, falling back to http mode", err)
+		if err := app.Listen(":" + os.Getenv("PORT")); err != nil {
+			panic(err)
+		}
+	} else {
+		if err := app.ListenTLSWithCertificate(":" + os.Getenv("PORT"), *cert); err != nil {
+			panic(err)
+		}
 	}
+
+
 }

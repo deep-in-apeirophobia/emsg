@@ -7,7 +7,6 @@ require (
 	github.com/getsentry/sentry-go/fiber v0.31.1
 	github.com/gofiber/contrib/websocket v1.3.3
 	github.com/gofiber/fiber/v2 v2.52.6
-	google.golang.org/protobuf v1.36.6
 )
 
 require (
@@ -25,5 +24,4 @@ require (
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
-	hg.atrin.dev/proto v0.0.3-0.20250406195630-1d9352f8f824 // indirect
 )

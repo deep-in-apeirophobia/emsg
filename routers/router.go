@@ -3,6 +3,7 @@ package routers
 import (
 	"github.com/gofiber/fiber/v2/log"
 	"html"
+	"fmt"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
@@ -166,7 +167,7 @@ func chatHandler(c *fiber.Ctx) error {
 
 	username, ok := sessions[sessionid]
 	if sessionid == "" || !ok {
-		return c.Redirect("/", fiber.StatusFound)
+		return c.Redirect(fmt.Sprintf("/?rid=%s", roomid), fiber.StatusFound)
 	}
 
 	err := tpl.ExecuteTemplate(c.Response().BodyWriter(), "chat", LoginData{

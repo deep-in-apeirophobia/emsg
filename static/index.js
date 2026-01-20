@@ -2,6 +2,12 @@ var sock,
   pingTimeout,
   isAlive = false;
 
+if ("Notification" in window) {
+  Notification.requestPermission().then((permission) => {
+    console.log("Notification permission", permission);
+  });
+}
+
 const msgcnt = document.getElementById("messages");
 
 const userColors = [
@@ -32,12 +38,32 @@ function handleJoinMessage(msg) {
   newmsg.classList.add("text-center", "text-gray-400", "text-sm", "p-1");
   newmsg.innerText = msg.message;
   msgcnt.appendChild(newmsg);
+
+  if (msg.user_id !== window.chatdata.user_id) {
+    try {
+      const notif = new Notification(
+        `${msg.username} (${msg.user_id.slice(0, 5)}) joined the room`,
+      );
+    } catch (e) {
+      console.log("Failed to create notification");
+    }
+  }
 }
 function handleLeaveMessage(msg) {
   const newmsg = document.createElement("div");
   newmsg.classList.add("text-center", "text-red-400", "text-sm", "p-1");
   newmsg.innerText = msg.message;
   msgcnt.appendChild(newmsg);
+
+  if (msg.user_id !== window.chatdata.user_id) {
+    try {
+      const notif = new Notification(
+        `${msg.username} (${msg.user_id.slice(0, 5)}) left the room`,
+      );
+    } catch (e) {
+      console.log("Failed to create notification");
+    }
+  }
 }
 
 function handleUserMessage(msg) {
@@ -77,6 +103,16 @@ function handleUserMessage(msg) {
   newmsg.scrollIntoView({
     behavior: "smooth",
   });
+
+  if (msg.user_id !== window.chatdata.user_id) {
+    try {
+      const notif = new Notification(
+        `New message from ${msg.username} (${msg.user_id.slice(0, 5)})`,
+      );
+    } catch (e) {
+      console.log("Failed to create notification");
+    }
+  }
 }
 
 function handleMessage(e) {
@@ -139,7 +175,6 @@ function init() {
 }
 
 function handleSubmit(e) {
-  console.log("e");
   e.preventDefault();
   if (!sock) return;
   const input = document.getElementById("msgbox");

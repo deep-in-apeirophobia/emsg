@@ -135,7 +135,7 @@ func (c *connectionContext) SendMessage(msg *types.Message) error {
 	msg.RoomID = c.roomid
 	msg.UserID = c.userid
 	msg.UserName = c.username
-	msg.Message = html.EscapeString(msg.Message)
+	msg.Message = html.EscapeString(msg.Message) // TODO: Don't do this for encrypted messages
 
 	GetMessageTunnel() <- msg
 	return nil

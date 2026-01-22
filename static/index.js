@@ -96,7 +96,7 @@ function handleUserMessage(msg) {
   newmsg.appendChild(userid);
 
   const msgtext = document.createElement("span");
-  msgtext.innerText = msg.message;
+  msgtext.innerHTML = msg.message; // TODO: Use innerText for encrypted messages
   newmsg.appendChild(msgtext);
 
   msgcnt.appendChild(newmsg);

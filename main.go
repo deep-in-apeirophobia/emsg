@@ -81,7 +81,7 @@ func main() {
 
 	cert, err := helpers.GetCertificate()
 	if err != nil || cert == nil {
-		log.Fatalln("Failed to load certificate, falling back to http mode", err)
+		log.Println("Failed to load certificate, falling back to http mode", err)
 		if err := app.Listen(":" + os.Getenv("PORT")); err != nil {
 			panic(err)
 		}

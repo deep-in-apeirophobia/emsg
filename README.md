@@ -24,11 +24,25 @@ sudo systemctl enable emsgkas
 sudo systemctl start emsgkas
 ```
 
+## Running locally
+Before running the application in a local environment, make sure to first
+build the AES256 encryption wasm module with the following commands:
+
+```bash
+# Build the wasm module in static/
+make encryption-wasm
+
+# If not present, also copy the wasm loader from go stdlib
+cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" static/
+
+```
+
 ## TODO
 
 - [x] Scroll to bottom
-- [ ] HTTPS
+- [x] HTTPS
 - [x] WS ping pong
+- [x] AES256 Encryption
 - [ ] Local storage message history and message ids
 - [ ] file upload
 - [ ] Emojis

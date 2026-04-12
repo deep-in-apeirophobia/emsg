@@ -37,6 +37,11 @@ jobs:
           draft: false
           prerelease: false
 
+      - name: Build Encryption WASM
+        run: |
+          make encryption-wasm
+          cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" static/
+
       - name: Build for Linux (AMD64)
         run: |
           GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o emsgkas .

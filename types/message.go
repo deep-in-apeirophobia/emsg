@@ -6,11 +6,12 @@ type MessageType string
 
 // Declare constants of the custom type with predefined values
 const (
-	MessageTypePing        MessageType = "PING"
-	MessageTypePong        MessageType = "PONG"
-	MessageTypeJoined      MessageType = "JOINED"
-	MessageTypeLeft        MessageType = "LEFT"
-	MessageTypeTextMessage MessageType = "TEXT_MESSAGE"
+	MessageTypePing             MessageType = "PING"
+	MessageTypePong             MessageType = "PONG"
+	MessageTypeJoined           MessageType = "JOINED"
+	MessageTypeLeft             MessageType = "LEFT"
+	MessageTypeTextMessage      MessageType = "TEXT_MESSAGE"
+	MessageTypeEncryptedMessage MessageType = "ENCRYPTED_MESSAGE"
 )
 
 type Message struct {

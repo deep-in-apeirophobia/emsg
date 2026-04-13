@@ -40,7 +40,6 @@ jobs:
       - name: Build Encryption WASM
         run: |
           make encryption-wasm
-          cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" static/
 
       - name: Build for Linux (AMD64)
         run: |

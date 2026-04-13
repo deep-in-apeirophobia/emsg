@@ -30,8 +30,10 @@ function updateEncryptionKey(newkey) {
 		if (res.error) {
 			msg.innerText = res.error;
 			msg.dataset.encfailed = true;
-		} else
+		} else {
+			delete msg.dataset.encfailed;
 			msg.innerText = res.result;
+		}
 	}
 
 }

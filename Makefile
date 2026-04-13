@@ -38,6 +38,7 @@ $(PLATFORMS):
 encryption-wasm:
 	@echo "Building wasm encryption module..."
 	@mkdir -p $(BUILD_DIR)
+	cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" static/
 	GOOS=js GOARCH=wasm go build -o static/$(ENCRYPTION_BINARY_NAME).wasm ./pkg/encryption/main.go
 
 package:
@@ -62,3 +63,5 @@ test:
 
 clean:
 	rm -rf $(BUILD_DIR)
+	rm static/$(ENCRYPTION_BINARY_NAME).wasm static/wasm_exec.js
+

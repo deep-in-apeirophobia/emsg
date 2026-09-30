@@ -1,51 +1,103 @@
 {{ define "home_logged_in" }}
-	<div>
-		Logged in as {{ .Username }} ({{ .UserID }})
+	<div class="whoami">
+		<span class="avatar" aria-hidden="true">
+			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+		</span>
+		<span class="who">
+			<small>Signed in as</small>
+			<strong data-decode>{{ .Username }}</strong>
+		</span>
+		<span class="check">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+			Ready
+		</span>
 	</div>
 {{ end }}
 {{ define "home_login" }}
-	<div class="flex gap-2 flex-col">
-		<label for="username">
-			Username
-		</label>
-		<input name="username" class="bg-sky-300/10 hover:bg-sky-300/20
-		transition-all duration-300 rounded-md p-2"></input>
+	<div class="field">
+		<label for="username">Your name</label>
+		<div class="input-wrap">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+			<input id="username" name="username" class="input" placeholder="e.g. Alice" autocomplete="nickname" autocapitalize="words" spellcheck="false" required autofocus>
+		</div>
 	</div>
 {{ end }}
 {{ define "home" }}
-	<!DOCTYPE html>
-	<html>
-	<head>
-			<title>Message Kaskade</title>
-			<!-- <script src="https://gitcdn.ir/library/jquery/3.5.1/jquery-3.5.1.min.js"></script> -->
-			<meta name="viewport" content="width=device-width, initial-scale=1">
-			<!-- <script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js"></script> -->
-			<script src="/static/tailwind4.1.10.global.js" ></script>
-			<script src="/static/jquery3.5.1.min.js" ></script>
-	</head>
-	<body class="flex items-center justify-center py-4 px-2 min-h-screen bg-gray-950 text-white">
-		<form method="post" to="/login" class="w-full max-w-md rounded-sm bg-blue-600/10 rounded-md bg-clip-padding backdrop-filter backdrop-blur-2xl bg-opacity-10 border border-gray-100 flex flex-col gap-2 p-4 mx-auto"> 
-			{{if .IsLoggedIn}}
-				{{ template "home_logged_in" . }}
-			{{else}}
-				{{ template "home_login" }}
-			{{end}}
-			<div class="flex gap-2 flex-col">
-				<label for="roomid">
-					Room ID
-				</label>
-				<input name="roomid" class="bg-sky-300/10 hover:bg-sky-300/20
-				transition-all duration-300 rounded-md p-2" value="{{ .RoomID }}"></div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<meta name="color-scheme" content="light dark">
+	<title>Message Kaskade</title>
+	<link rel="stylesheet" href="/static/bubbles.css">
+</head>
+<body class="wallpaper">
+	<main class="home">
+		<section class="card" aria-labelledby="join-title">
+			<div class="brand">
+				<svg class="app-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 76" aria-hidden="true">
+					<defs>
+						<linearGradient id="ai-bg" x1="0" y1="0" x2="1" y2="1">
+							<stop offset="0" stop-color="#5b9bff"/>
+							<stop offset="1" stop-color="#2659d6"/>
+						</linearGradient>
+					</defs>
+					<rect width="76" height="76" rx="22" fill="url(#ai-bg)"/>
+					<path d="M20 24.5c0-3.6 2.9-6.5 6.5-6.5h23c3.6 0 6.5 2.9 6.5 6.5v16c0 3.6-2.9 6.5-6.5 6.5H35l-8.6 7.3c-.9.8-2.4.1-2.4-1.1V47c-2.3-.6-4-2.7-4-5.1z" fill="#fff"/>
+					<circle cx="30" cy="32.5" r="2.6" fill="#2f6fe4"/>
+					<circle cx="38" cy="32.5" r="2.6" fill="#2f6fe4"/>
+					<circle cx="46" cy="32.5" r="2.6" fill="#2f6fe4"/>
+					<path d="M54 12.5a13 13 0 0 1 9.5 9.5" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="3" stroke-linecap="round"/>
+					<path d="M53.6 18.4a6.5 6.5 0 0 1 4 4" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="3" stroke-linecap="round"/>
+				</svg>
+				<h1 id="join-title">Join a room</h1>
+				<p>Message Kaskade &middot; a lightweight messenger for your local network.</p>
 			</div>
-			
-			{{ if .Error }}
-				<p class="text-red-400">
-					{{ .ErrorMessage }}
-				</p>
-			{{ end }}
-			<button type="submit" 
-				class="p-2 hover:bg-sky-500/20 transition-all duration-300 rounded-lg cursor-pointer">Enter</button>
-		</form>
-	</body>
-	</html>
+
+			<form class="form" method="post" action="/">
+				{{ if .IsLoggedIn }}
+					{{ template "home_logged_in" . }}
+				{{ else }}
+					{{ template "home_login" }}
+				{{ end }}
+
+				<div class="field">
+					<label for="roomid">Room ID</label>
+					<div class="input-wrap">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h14M5 15h14M10 4 8 20M16 4l-2 16"/></svg>
+						<input id="roomid" name="roomid" class="input" value="{{ .RoomID }}" placeholder="e.g. lobby" autocomplete="off" autocapitalize="off" spellcheck="false" required {{ if .IsLoggedIn }}autofocus{{ end }}>
+					</div>
+					<p class="hint">Everyone who enters the same room ID ends up in the same chat.</p>
+				</div>
+
+				{{ if .Error }}
+					<div class="alert" role="alert">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+						<span>{{ .ErrorMessage }}</span>
+					</div>
+				{{ end }}
+
+				<button type="submit" class="btn btn-primary btn-block">
+					Join room
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+				</button>
+			</form>
+
+			<p class="footnote">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+				You can set a shared encryption key once you're inside.
+			</p>
+		</section>
+	</main>
+	<script>
+		// Usernames are HTML-escaped by the server before storage; undo that once
+		// for display. DOMParser does not run scripts and we only read text.
+		document.querySelectorAll("[data-decode]").forEach(function (el) {
+			var doc = new DOMParser().parseFromString("<!doctype html><body>" + el.textContent, "text/html");
+			el.textContent = doc.body.textContent;
+		});
+	</script>
+</body>
+</html>
 {{ end }}

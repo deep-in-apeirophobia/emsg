@@ -1,0 +1,992 @@
+/* ==================================================================
+ * emsg :: IBM 3270 / ISPF block-mode terminal theme
+ * Hand-written, no external fonts or libraries.
+ * Colors follow the 3279 base palette: green = unprotected/normal,
+ * turquoise = labels, white = intensified, blue = protected info,
+ * red = errors, yellow = highlights, pink = accents.
+ * ================================================================== */
+
+:root {
+	--bg: #000;
+	--green: #3be35f;
+	--turq: #4fe8e8;
+	--blue: #7c96ff;
+	--blue-dim: #4a5fb0;
+	--red: #ff5252;
+	--pink: #ff6bf0;
+	--yellow: #fff04a;
+	--white: #f5f5f5;
+
+	--fs: 16px;
+	--lh: 22px;
+	--gutter: 2ch;
+	--c-time: 8ch;
+	--c-user: 12ch;
+
+	--glow: 0 0 0.5px currentColor, 0 0 6px color-mix(in srgb, currentColor 22%, transparent);
+
+	color-scheme: dark;
+	font-family: "IBM Plex Mono", "IBM 3270", ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono",
+		Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace;
+	font-size: var(--fs);
+	line-height: var(--lh);
+	background: var(--bg);
+	color: var(--green);
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+@media (max-width: 640px) {
+	:root {
+		--fs: 14px;
+		--lh: 20px;
+		--gutter: 1ch;
+		--c-time: 5ch;
+		--c-user: 9ch;
+	}
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	background: var(--bg);
+}
+
+body {
+	min-height: 100vh;
+	min-height: 100dvh;
+	display: flex;
+	flex-direction: column;
+	text-shadow: var(--glow);
+}
+
+h1,
+h2,
+p,
+dl,
+dd {
+	margin: 0;
+	font: inherit;
+}
+
+button,
+input,
+textarea {
+	font: inherit;
+	line-height: var(--lh);
+	color: inherit;
+	letter-spacing: 0;
+	text-shadow: inherit;
+}
+
+::selection {
+	background: var(--turq);
+	color: #000;
+	text-shadow: none;
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ---------- field attribute classes ---------- */
+
+.lbl {
+	color: var(--turq);
+}
+
+.pv {
+	color: var(--white);
+}
+
+.up {
+	text-transform: uppercase;
+}
+
+.arrow {
+	color: var(--turq);
+	margin: 0 1ch;
+}
+
+/* Unprotected, underscored input field. The underscores are drawn one per
+ * character cell: a dashed layer, masked by a black layer everywhere except
+ * the last pixel row of each text line. */
+.ufld {
+	--ul: color-mix(in srgb, var(--green) 70%, transparent);
+	display: block;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	outline: none;
+	color: var(--green);
+	caret-color: var(--white);
+	background-color: var(--bg);
+	background-image:
+		repeating-linear-gradient(to bottom, var(--bg) 0 calc(var(--lh) - 2px), transparent calc(var(--lh) - 2px) calc(var(--lh) - 1px), var(--bg) calc(var(--lh) - 1px) var(--lh)),
+		repeating-linear-gradient(to right, var(--ul) 0 calc(1ch - 2px), transparent calc(1ch - 2px) 1ch);
+	background-attachment: local;
+	appearance: none;
+	-webkit-appearance: none;
+}
+
+.ufld:focus-visible,
+.ufld:focus {
+	--ul: var(--white);
+	background-color: #0b1a10;
+	outline: 1px solid color-mix(in srgb, var(--yellow) 65%, transparent);
+	outline-offset: 2px;
+}
+
+.ufld:focus {
+	background-image:
+		repeating-linear-gradient(to bottom, #0b1a10 0 calc(var(--lh) - 2px), transparent calc(var(--lh) - 2px) calc(var(--lh) - 1px), #0b1a10 calc(var(--lh) - 1px) var(--lh)),
+		repeating-linear-gradient(to right, var(--ul) 0 calc(1ch - 2px), transparent calc(1ch - 2px) 1ch);
+}
+
+/* ---------- PF key buttons ---------- */
+
+.pfkeys {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 2ch;
+}
+
+.pf {
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: none;
+	color: var(--blue);
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.pf-enter {
+	color: var(--white);
+}
+
+.pf:hover {
+	color: var(--yellow);
+}
+
+.pf:focus-visible {
+	outline: none;
+	background: var(--yellow);
+	color: #000;
+	text-shadow: none;
+}
+
+.pf:active {
+	background: var(--blue);
+	color: #000;
+	text-shadow: none;
+}
+
+/* ---------- screen + title line ---------- */
+
+.screen {
+	flex: 1 1 auto;
+	min-height: 0;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	padding: 0 var(--gutter);
+	padding-left: max(var(--gutter), env(safe-area-inset-left));
+	padding-right: max(var(--gutter), env(safe-area-inset-right));
+}
+
+.titleline {
+	display: flex;
+	align-items: baseline;
+	gap: 1ch;
+	white-space: nowrap;
+	min-width: 0;
+	padding-top: 4px;
+}
+
+.tl-id {
+	color: var(--turq);
+}
+
+.tl-title {
+	color: var(--white);
+	flex: 0 1 auto;
+	overflow: hidden;
+	text-overflow: clip;
+}
+
+.tl-title .room {
+	text-transform: uppercase;
+}
+
+.rule {
+	flex: 1 1 2ch;
+	min-width: 2ch;
+	overflow: hidden;
+	color: var(--blue);
+}
+
+.rule::before {
+	content: "----------------------------------------------------------------------------------------------------------------------------------------------------------------------------";
+}
+
+.tl-right {
+	color: var(--white);
+}
+
+/* ---------- operator information area ---------- */
+
+.oia {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: baseline;
+	gap: 2ch;
+	margin-top: 6px;
+	padding: 3px var(--gutter) calc(3px + env(safe-area-inset-bottom));
+	border-top: 1px solid var(--blue);
+	color: var(--blue);
+	white-space: nowrap;
+	overflow: hidden;
+	font-size: 0.9em;
+}
+
+.oia-rdy {
+	display: inline-flex;
+}
+
+.oia-rdy b {
+	font-weight: normal;
+	background: var(--blue);
+	color: #000;
+	text-shadow: none;
+	padding: 0 1px;
+}
+
+.oia-rdy b + b {
+	margin-left: 1px;
+}
+
+.oia-lu {
+	margin-left: -1ch;
+}
+
+.oia-fill {
+	flex: 1;
+}
+
+.oia-stat .x,
+#conn-stat .x {
+	display: inline-block;
+	padding: 0 2px;
+	background: var(--white);
+	color: #000;
+	text-shadow: none;
+}
+
+.oia-stat {
+	color: var(--white);
+}
+
+.oia-enc {
+	visibility: hidden;
+	color: var(--pink);
+}
+
+body[data-enc="on"] .oia-enc {
+	visibility: visible;
+}
+
+#conn-stat {
+	color: var(--white);
+}
+
+#conn-stat[data-state="up"] .x {
+	display: none;
+}
+
+#conn-stat[data-state="down"] {
+	color: var(--red);
+}
+
+#conn-stat[data-state="down"] .x {
+	background: var(--red);
+}
+
+#conn-stat[data-state="connecting"] .x {
+	background: var(--yellow);
+}
+
+#conn-stat[data-state="connecting"] {
+	color: var(--yellow);
+}
+
+/* ==================================================================
+ * LOGON (home)
+ * ================================================================== */
+
+.logon .screen {
+	max-width: 84ch;
+	margin: 0 auto;
+}
+
+.logon-body {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	padding: calc(var(--lh) * 1.5) 0 var(--lh);
+}
+
+.banner {
+	--bfs: min(1em, calc((100vw - 2 * var(--gutter) - 4px) / 46 / 0.6));
+	display: flex;
+	gap: 2ch;
+	font-size: var(--bfs);
+	line-height: 1.02;
+	font-weight: 700;
+	margin-left: 1ch;
+}
+
+@media (max-width: 640px) {
+	.banner {
+		gap: 1.2ch;
+		margin-left: 0;
+	}
+
+}
+
+.banner .bl {
+	margin: 0;
+	font: inherit;
+	line-height: inherit;
+}
+
+.b-e {
+	color: var(--blue);
+}
+
+.b-m {
+	color: var(--red);
+}
+
+.b-s {
+	color: var(--pink);
+}
+
+.b-g {
+	color: var(--green);
+}
+
+.subtitle {
+	margin-top: var(--lh);
+	margin-left: 1ch;
+	color: var(--yellow);
+	letter-spacing: 0.08em;
+}
+
+.sysinfo {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, max-content));
+	gap: 0 6ch;
+	margin: var(--lh) 0 0 1ch;
+}
+
+.sysinfo > div,
+.info > div {
+	display: flex;
+	white-space: nowrap;
+}
+
+.sysinfo dt,
+.info dt {
+	color: var(--turq);
+}
+
+.sysinfo dt::after {
+	content: " . . . . . . :";
+	color: var(--blue-dim);
+	display: inline-block;
+	width: 7ch;
+	overflow: hidden;
+	vertical-align: bottom;
+	white-space: pre;
+}
+
+.sysinfo dt {
+	width: 16ch;
+	overflow: hidden;
+}
+
+.sysinfo dd,
+.info dd {
+	color: var(--white);
+}
+
+@media (max-width: 640px) {
+	.subtitle {
+		letter-spacing: 0;
+	}
+
+	.sysinfo {
+		grid-template-columns: minmax(0, max-content);
+	}
+}
+
+.logon-form {
+	margin-top: calc(var(--lh) * 1.5);
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.cmd {
+	margin-left: 1ch;
+}
+
+.instr {
+	color: var(--white);
+	margin: var(--lh) 0 var(--lh) 1ch;
+	font-weight: 700;
+}
+
+.fld {
+	display: flex;
+	align-items: baseline;
+	margin-left: 1ch;
+	min-width: 0;
+}
+
+.fld + .fld {
+	margin-top: 6px;
+}
+
+.fld .lbl {
+	width: 6ch;
+	flex: 0 0 auto;
+}
+
+.fld .ufld {
+	flex: 0 1 32ch;
+	width: 32ch;
+	height: var(--lh);
+}
+
+.pfield {
+	color: var(--white);
+	text-transform: uppercase;
+	overflow-wrap: anywhere;
+}
+
+.smsg {
+	margin: var(--lh) 0 0 1ch;
+	color: var(--blue);
+	overflow-wrap: anywhere;
+}
+
+.smsg + .fld {
+	margin-top: var(--lh);
+}
+
+.smsg.err {
+	color: var(--red);
+	font-weight: 700;
+}
+
+.smsg .code {
+	color: inherit;
+	font-weight: 700;
+}
+
+.smsg.ok .code {
+	color: var(--turq);
+}
+
+.logon-form .pfkeys {
+	margin: calc(var(--lh) * 1.5) 0 0 1ch;
+}
+
+/* ==================================================================
+ * CHAT (ISPF table display)
+ * ================================================================== */
+
+.chat {
+	height: 100vh;
+	height: 100dvh;
+	overflow: hidden;
+}
+
+.panel-head {
+	flex: 0 0 auto;
+}
+
+#smsg {
+	display: none;
+}
+
+#smsg.err {
+	color: var(--red);
+	font-weight: 700;
+}
+
+body[data-smsg="on"] #smsg {
+	display: inline;
+}
+
+body[data-smsg="on"] #rowinfo {
+	display: none;
+}
+
+.cmdline {
+	display: flex;
+	align-items: baseline;
+	gap: 1ch;
+	margin-top: 2px;
+}
+
+.cmdline .ufld {
+	flex: 1 1 auto;
+	height: var(--lh);
+	text-transform: uppercase;
+}
+
+.scroll {
+	white-space: nowrap;
+	margin-left: 1ch;
+}
+
+.info {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 4ch;
+	margin-top: var(--lh);
+}
+
+.info dt::after {
+	content: " . :";
+	color: var(--blue-dim);
+	white-space: pre;
+	margin-right: 1ch;
+}
+
+.info dd {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 24ch;
+}
+
+body[data-enc="on"] #enc-state {
+	color: var(--pink);
+	font-weight: 700;
+}
+
+body[data-enc="off"] #enc-state {
+	color: var(--yellow);
+}
+
+/* table header + rows share the same column grid */
+.tablehead,
+.line {
+	display: grid;
+	grid-template-columns: var(--c-time) var(--c-user) minmax(0, 1fr);
+	column-gap: 2ch;
+}
+
+.tablehead {
+	flex: 0 0 auto;
+	margin-top: var(--lh);
+	color: var(--turq);
+	border-bottom: 1px dashed var(--blue-dim);
+	padding-bottom: 1px;
+	margin-bottom: 4px;
+}
+
+#messages {
+	position: relative;
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	scrollbar-color: var(--blue-dim) transparent;
+	outline: none;
+	padding-bottom: 2px;
+}
+
+#messages:focus-visible {
+	outline: 1px dashed var(--yellow);
+}
+
+.marker {
+	display: flex;
+	gap: 1ch;
+	white-space: nowrap;
+	color: var(--white);
+}
+
+.marker .stars {
+	flex: 1 1 0;
+	overflow: hidden;
+	color: var(--blue);
+}
+
+.marker .stars::before {
+	content: "***************************************************************************************************************************************";
+}
+
+.marker .stars:first-child {
+	direction: rtl;
+}
+
+.line {
+	padding: 1px 0;
+}
+
+.ts {
+	color: var(--blue);
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+@media (max-width: 640px) {
+	.ts .sec {
+		display: none;
+	}
+}
+
+.uid {
+	display: flex;
+	align-items: baseline;
+	align-self: start;
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-transform: uppercase;
+}
+
+.uid .name {
+	flex: 0 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	font-weight: 700;
+}
+
+.uid .lead {
+	flex: 1 0 0;
+	overflow: hidden;
+	color: var(--blue-dim);
+	font-weight: normal;
+}
+
+.uid .lead::before {
+	content: " . . . . . . . . . . . . . . . . . . . . . .";
+	white-space: pre;
+}
+
+.line > .text {
+	min-width: 0;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+.line.other .msg {
+	color: var(--green);
+}
+
+/* own lines: intensified white text, yellow USERID in reverse video */
+.line.self .msg {
+	color: var(--white);
+}
+
+.uid.me .name {
+	background: var(--yellow);
+	color: #000;
+	text-shadow: none;
+	padding: 0 2px;
+}
+
+/* deterministic per-user colour + extended highlighting */
+.c0 { color: var(--turq); }
+.c1 { color: var(--pink); }
+.c2 { color: var(--green); }
+.c3 { color: var(--white); }
+.c4 { color: var(--blue); }
+.c5 { color: var(--turq); }
+.c6 { color: var(--pink); }
+.c7 { color: var(--green); }
+.c8 { color: var(--white); }
+.c9 { color: var(--red); }
+.c5 .name,
+.c6 .name,
+.c7 .name,
+.c8 .name,
+.c9 .name {
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.enc-tag {
+	display: inline-block;
+	margin-right: 1ch;
+	padding: 0 2px;
+	line-height: calc(var(--lh) - 4px);
+	background: var(--pink);
+	color: #000;
+	text-shadow: none;
+	font-size: 0.85em;
+	vertical-align: 1px;
+}
+
+.msg[data-encfailed] {
+	color: var(--red) !important;
+	font-weight: 700;
+}
+
+/* system notices (IEF-style message codes) */
+.line.sys > .text {
+	grid-column: 2 / -1;
+	color: var(--blue);
+	text-transform: uppercase;
+}
+
+.line.sys .code {
+	color: var(--blue);
+	font-weight: 700;
+}
+
+.line.sys .who {
+	color: var(--white);
+}
+
+.line.sys .sid {
+	text-transform: none;
+	color: var(--blue-dim);
+}
+
+.line.note > .text {
+	color: var(--turq);
+}
+
+.line.help > .text {
+	color: var(--yellow);
+}
+
+.line.help .code,
+.line.note .code {
+	color: var(--white);
+}
+
+.line.warn > .text,
+.line.warn .code {
+	color: var(--red);
+	font-weight: 700;
+}
+
+.line.good > .text {
+	color: var(--green);
+}
+
+.line.good .code {
+	color: var(--white);
+}
+
+/* composer + PF legend */
+.panel-foot {
+	flex: 0 0 auto;
+	padding-top: 6px;
+	border-top: 1px dashed var(--blue-dim);
+}
+
+#msgform {
+	display: flex;
+	align-items: flex-start;
+	gap: 1ch;
+}
+
+#msgform .lbl {
+	flex: 0 0 auto;
+	white-space: nowrap;
+}
+
+#msgbox {
+	flex: 1 1 auto;
+	resize: none;
+	overflow-y: hidden;
+	height: var(--lh);
+	min-height: var(--lh);
+	max-height: calc(var(--lh) * 6);
+	white-space: pre-wrap;
+}
+
+.panel-foot .pfkeys {
+	margin-top: 6px;
+}
+
+/* disconnected: dim the table, mark the input as inhibited */
+body[data-conn="down"] #msgbox {
+	--ul: color-mix(in srgb, var(--red) 70%, transparent);
+}
+
+body[data-conn="down"] .pf-enter[form] {
+	color: var(--blue-dim);
+}
+
+@media (max-width: 640px) {
+	.scroll,
+	.info-time,
+	.pf-scroll {
+		display: none;
+	}
+
+	.info {
+		gap: 0 2ch;
+		margin-top: 4px;
+	}
+
+	.tablehead {
+		margin-top: 6px;
+	}
+
+	.tablehead,
+	.line {
+		column-gap: 1ch;
+	}
+
+	.oia {
+		gap: 1.5ch;
+	}
+
+	#msgform {
+		flex-wrap: wrap;
+	}
+}
+
+/* ==================================================================
+ * ISPF pop-up window (encryption key)
+ * ================================================================== */
+
+dialog {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	width: 60ch;
+	max-width: calc(100vw - 2 * var(--gutter) - 8px);
+	overflow: visible;
+}
+
+dialog::backdrop {
+	background: rgba(0, 0, 0, 0.55);
+}
+
+.popup {
+	position: relative;
+	background: var(--bg);
+	border: 2px solid var(--yellow);
+	box-shadow: 0 0 0 1ch var(--bg);
+	padding: calc(var(--lh) * 0.9) 2ch calc(var(--lh) * 0.7);
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.pop-title {
+	position: absolute;
+	top: calc(var(--lh) / -2 - 1px);
+	left: 50%;
+	transform: translateX(-50%);
+	padding: 0 1ch;
+	background: var(--bg);
+	color: var(--white);
+	white-space: nowrap;
+}
+
+.pop-head {
+	display: flex;
+	justify-content: space-between;
+	gap: 2ch;
+}
+
+.pop-desc {
+	margin-top: var(--lh);
+	color: var(--green);
+}
+
+#message {
+	color: var(--red);
+	font-weight: 700;
+	text-transform: uppercase;
+	overflow-wrap: anywhere;
+}
+
+#message:not(:empty) {
+	margin-top: var(--lh);
+}
+
+.popup .fld {
+	margin: var(--lh) 0 0;
+	flex-wrap: wrap;
+}
+
+.popup .fld .lbl {
+	width: auto;
+}
+
+.popup .fld .ufld {
+	flex: 1 1 16ch;
+	width: auto;
+}
+
+.pop-help {
+	margin-top: var(--lh);
+	color: var(--blue);
+}
+
+.popup .pfkeys {
+	margin-top: var(--lh);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	dialog[open] .popup {
+		animation: pop-in 90ms steps(3, end);
+	}
+
+	@keyframes pop-in {
+		from {
+			clip-path: inset(0 0 100% 0);
+		}
+		to {
+			clip-path: inset(0 0 0 0);
+		}
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation: none !important;
+		transition: none !important;
+		scroll-behavior: auto !important;
+	}
+}
+
+@media (forced-colors: active) {
+	.ufld {
+		border-bottom: 1px solid CanvasText;
+	}
+}

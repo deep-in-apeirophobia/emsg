@@ -1,0 +1,1424 @@
+/* ==========================================================================
+ * emsg — "DOS / BBS ANSI" theme
+ * Early-90s text-mode PC: 16-colour CGA/VGA palette, Turbo Vision chrome,
+ * Norton Commander function-key bar, BBS teleconference chat.
+ * Everything sits on a character grid: 1ch wide, one --row tall.
+ * No web fonts, no images: system monospace + box-drawing glyphs + CSS.
+ * ========================================================================== */
+
+:root {
+	/* the 16 CGA/VGA text-mode colours */
+	--black: #000000;
+	--blue: #0000aa;
+	--green: #00aa00;
+	--cyan: #00aaaa;
+	--red: #aa0000;
+	--magenta: #aa00aa;
+	--brown: #aa5500;
+	--lgray: #aaaaaa;
+	--dgray: #555555;
+	--lblue: #5555ff;
+	--lgreen: #55ff55;
+	--lcyan: #55ffff;
+	--lred: #ff5555;
+	--lmagenta: #ff55ff;
+	--yellow: #ffff55;
+	--white: #ffffff;
+
+	--row: 1.25rem; /* one text row */
+	--bar: var(--row); /* height of menu bar / function-key bar */
+	--font: "Px437 IBM VGA 8x16", "Px437 IBM VGA 9x16", "Perfect DOS VGA 437",
+		"Perfect DOS VGA 437 Win", "Less Perfect DOS VGA", "Unifont", "Fixedsys Excelsior 3.01",
+		"Consolas", "Lucida Console", "DejaVu Sans Mono", "Menlo", "Liberation Mono", monospace;
+
+	color-scheme: dark;
+	font-size: 16px;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	height: 100%;
+}
+
+body {
+	font-family: var(--font);
+	font-size: 1rem;
+	line-height: var(--row);
+	color: var(--lgray);
+	background: var(--blue);
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	height: 100dvh;
+	overflow: hidden;
+	-webkit-font-smoothing: none;
+	font-smooth: never;
+	font-variant-ligatures: none;
+	text-rendering: optimizeSpeed;
+}
+
+button,
+input,
+textarea {
+	font: inherit;
+	line-height: var(--row);
+	color: inherit;
+	letter-spacing: 0;
+}
+
+button {
+	cursor: pointer;
+}
+
+h1,
+h2,
+p {
+	margin: 0;
+	font-size: inherit;
+	font-weight: inherit;
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* hotkey letter, Turbo Vision style */
+.hk {
+	color: var(--red);
+}
+
+::selection {
+	background: var(--cyan);
+	color: var(--black);
+}
+
+:focus-visible {
+	outline: 2px solid var(--yellow);
+	outline-offset: 0;
+}
+
+@keyframes blink {
+	50% {
+		visibility: hidden;
+	}
+}
+
+/* ---------- blinking underscore cursor ---------- */
+
+.cursor {
+	display: inline-block;
+	width: 1ch;
+	height: var(--row);
+	vertical-align: top;
+	position: relative;
+	animation: blink 1.06s steps(1, end) infinite;
+}
+
+.cursor::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0.2rem;
+	height: 0.15rem;
+	background: currentColor;
+}
+
+/* ==========================================================================
+ * Menu bar (top row)
+ * ========================================================================== */
+
+.menubar {
+	flex: none;
+	display: flex;
+	align-items: stretch;
+	height: var(--bar);
+	background: var(--lgray);
+	color: var(--black);
+	white-space: nowrap;
+	position: relative;
+	z-index: 2;
+}
+
+.menubar .sys {
+	padding: 0 1ch;
+	display: flex;
+	align-items: center;
+}
+
+.menubar .menu {
+	display: flex;
+	align-items: stretch;
+}
+
+.mi {
+	display: flex;
+	align-items: center;
+	padding: 0 1ch;
+	border: 0;
+	margin: 0;
+	background: transparent;
+	color: var(--black);
+	height: 100%;
+}
+
+button.mi:hover,
+button.mi:focus-visible {
+	background: var(--green);
+	color: var(--black);
+	outline: none;
+}
+
+button.mi:hover .hk,
+button.mi:focus-visible .hk {
+	color: var(--white);
+}
+
+.mi.off,
+.mi.off .hk {
+	color: var(--dgray);
+}
+
+.menubar .spacer {
+	flex: 1;
+}
+
+.menubar .right {
+	display: flex;
+	align-items: center;
+	padding: 0 1ch;
+	gap: 2ch;
+}
+
+.menubar .clock {
+	color: var(--black);
+}
+
+/* connection indicator: modem result codes */
+.conn {
+	display: inline-flex;
+	align-items: center;
+}
+
+#conn-ok {
+	color: var(--black);
+}
+
+#conn-ok::before {
+	content: "\25A0\00a0"; /* ■ */
+	color: var(--green);
+}
+
+#conn-stat {
+	padding: 0 1ch;
+	margin: 0 -1ch;
+	background: var(--brown);
+	color: var(--white);
+	display: inline-flex;
+	align-items: center;
+	height: var(--bar);
+}
+
+#conn-stat .nocarrier {
+	display: none;
+}
+
+body[data-ever] #conn-stat {
+	background: var(--red);
+	color: var(--white);
+}
+
+body[data-ever] #conn-stat .nocarrier {
+	display: inline;
+}
+
+#conn-stat::before {
+	content: "\25A0\00a0"; /* ■ */
+	color: var(--yellow);
+	animation: blink 1.06s steps(1, end) infinite;
+}
+
+body[data-ever] #conn-stat .dialing {
+	display: none;
+}
+
+body[data-conn="up"] #conn-stat,
+body:not([data-conn="up"]) #conn-ok {
+	display: none;
+}
+
+/* ==========================================================================
+ * Desktop (░ pattern) and windows
+ * ========================================================================== */
+
+.desk {
+	flex: 1;
+	min-height: 0;
+	position: relative;
+	display: flex;
+	/* ░ light shade: blue dots on light gray, 1 of 4 pixels lit */
+	background-color: var(--lgray);
+	background-image:
+		conic-gradient(from 90deg at 2px 2px, transparent 50%, var(--blue) 0 75%, transparent 0),
+		conic-gradient(from 90deg at 2px 2px, transparent 50%, var(--blue) 0 75%, transparent 0);
+	background-size: 8px 4px, 8px 4px;
+	background-position: 0 0, 4px 2px;
+	padding: var(--row) 4ch calc(var(--row) * 2) 3ch;
+}
+
+.win {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-width: 0;
+	min-height: 0;
+	background: var(--blue);
+	color: var(--lgray);
+	padding: var(--row) 1ch 0;
+	/* hard shadow, one character cell (2 columns x 1 row) */
+	box-shadow: 2ch var(--row) 0 0 var(--black);
+}
+
+/* the double-line frame sits in the middle of the outermost character cells */
+.win::before {
+	content: "";
+	position: absolute;
+	inset: calc(var(--row) / 2) calc(0.5ch - 2px);
+	border: 5px double var(--white);
+	pointer-events: none;
+}
+
+.win-title {
+	position: absolute;
+	top: 0;
+	left: 1ch;
+	right: 1ch;
+	height: var(--row);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+	pointer-events: none;
+	z-index: 1;
+}
+
+.win-title > * {
+	pointer-events: auto;
+}
+
+.win-title .close,
+.win-title .zoom {
+	position: absolute;
+	top: 0;
+	background: var(--blue);
+	color: var(--white);
+	padding: 0 0;
+}
+
+.win-title .close {
+	left: 1ch;
+}
+
+.win-title .zoom {
+	right: 1ch;
+}
+
+.win-title .close b,
+.win-title .zoom b {
+	color: var(--lgreen);
+	font-weight: normal;
+}
+
+.win-title .title {
+	background: var(--blue);
+	color: var(--white);
+	padding: 0 1ch;
+	max-width: calc(100% - 14ch);
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+ * Chat window
+ * ========================================================================== */
+
+.chat .win {
+	padding-bottom: calc(var(--row) / 2);
+}
+
+#messages {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	overflow-wrap: anywhere;
+	/* let the scroll bar run down the right frame, like Turbo Vision */
+	margin-right: -1ch;
+	padding-right: 1ch;
+	scrollbar-color: var(--cyan) var(--blue);
+}
+
+#messages::-webkit-scrollbar {
+	width: 1ch;
+}
+
+#messages::-webkit-scrollbar-track {
+	background-color: var(--cyan);
+	background-image:
+		conic-gradient(from 90deg at 1px 1px, transparent 50%, var(--blue) 0 75%, transparent 0),
+		conic-gradient(from 90deg at 1px 1px, transparent 50%, var(--blue) 0 75%, transparent 0);
+	background-size: 2px 2px, 2px 2px;
+	background-position: 0 0, 1px 1px;
+}
+
+#messages::-webkit-scrollbar-thumb {
+	background: var(--blue);
+	border: 1px solid var(--cyan);
+}
+
+/* ---------- SysOp welcome bulletin ---------- */
+
+.bulletin {
+	position: relative;
+	display: flex;
+	gap: 3ch;
+	align-items: center;
+	margin: calc(var(--row) / 2) 0 var(--row);
+	padding: var(--row) 2ch calc(var(--row) - 2px);
+	color: var(--lgray);
+}
+
+.bulletin::before {
+	content: "";
+	position: absolute;
+	inset: calc(var(--row) / 2) calc(0.5ch - 1px);
+	border: 1px solid var(--cyan);
+	pointer-events: none;
+}
+
+.bulletin .blabel {
+	position: absolute;
+	top: 0;
+	left: 2ch;
+	padding: 0 1ch;
+	background: var(--blue);
+	color: var(--yellow);
+}
+
+.bulletin .blabel b {
+	color: var(--white);
+	font-weight: normal;
+}
+
+.bulletin p + p {
+	margin-top: 0;
+}
+
+.bulletin .bl-text {
+	min-width: 0;
+}
+
+.bulletin .star {
+	color: var(--yellow);
+}
+
+.bulletin .hi {
+	color: var(--white);
+}
+
+.bulletin .you {
+	color: var(--yellow);
+}
+
+.bulletin kbd,
+.fkeys kbd {
+	font: inherit;
+}
+
+.bulletin kbd {
+	color: var(--black);
+	background: var(--cyan);
+	padding: 0 0.5ch;
+}
+
+/* ---------- ANSI logo (shared by home + bulletin) ---------- */
+
+.ansi {
+	text-shadow: 1px 0 currentColor;
+	margin: 0;
+	font: inherit;
+	line-height: 1rem; /* blocks tile exactly: 1 glyph cell per row */
+	white-space: pre;
+	flex: none;
+}
+
+.ansi .r0 {
+	color: var(--white);
+}
+
+.ansi .r1 {
+	color: var(--lcyan);
+}
+
+.ansi .r2 {
+	color: var(--cyan);
+}
+
+.ansi .r3 {
+	color: var(--lblue);
+}
+
+.ansi .sh {
+	color: var(--dgray);
+}
+
+/* ---------- log lines ---------- */
+
+.line {
+	display: grid;
+	grid-template-columns: auto auto minmax(0, 1fr);
+	column-gap: 1ch;
+	align-items: start;
+}
+
+.line .ts {
+	color: var(--cyan);
+}
+
+.line .nick {
+	white-space: nowrap;
+	color: var(--white);
+}
+
+.line .text {
+	white-space: pre-wrap;
+	min-width: 0;
+}
+
+.line.other .text {
+	color: var(--lgray);
+}
+
+.line.self .text {
+	color: var(--white);
+}
+
+/* own nick: reverse video block */
+.line.self .nick .name {
+	background: var(--lgray);
+	color: var(--black);
+	padding: 0 0.5ch;
+	margin-left: -0.5ch;
+	display: inline-block;
+}
+
+.line.self .nick .name {
+	margin-right: 0;
+}
+
+.line .nick .colon {
+	color: var(--lgray);
+}
+
+/* ANSI bright colours for other users (deterministic by user id) */
+.c0 {
+	color: var(--lcyan) !important;
+}
+.c1 {
+	color: var(--lgreen) !important;
+}
+.c2 {
+	color: var(--yellow) !important;
+}
+.c3 {
+	color: var(--lmagenta) !important;
+}
+.c4 {
+	color: var(--lred) !important;
+}
+.c5 {
+	color: var(--white) !important;
+}
+.c6 {
+	color: #ffaa55 !important;
+}
+.c7 {
+	color: #aaffaa !important;
+}
+
+.enc-tag {
+	display: inline-block;
+	background: var(--magenta);
+	color: var(--white);
+	padding: 0 0.5ch;
+	margin-right: 1ch;
+}
+
+.msg[data-encfailed] {
+	color: var(--lred);
+}
+
+/* SysOp lines: *** carol has entered the room */
+.line.sys .bang {
+	color: var(--yellow);
+}
+
+.line.sys .text {
+	color: var(--cyan);
+}
+
+.line.sys.join .text {
+	color: var(--lgreen);
+}
+
+.line.sys.leave .text {
+	color: var(--lred);
+}
+
+.line.sys .who {
+	color: var(--white);
+}
+
+.line.sys .faint {
+	color: var(--cyan);
+}
+
+.line.sys.warn .bang,
+.line.sys.warn .text {
+	color: var(--white);
+}
+
+.line.sys.warn .text {
+	background: var(--red);
+	padding: 0 1ch;
+	justify-self: start;
+}
+
+.line.sys.good .text {
+	color: var(--black);
+	background: var(--green);
+	padding: 0 1ch;
+	justify-self: start;
+}
+
+.line.sys.help .text {
+	color: var(--lgray);
+}
+
+.line.sys.help kbd {
+	font: inherit;
+	color: var(--white);
+}
+
+/* ---------- divider + composer ---------- */
+
+.sep {
+	position: relative;
+	flex: none;
+	height: var(--row);
+	margin: 0 -1ch;
+	display: flex;
+	align-items: center;
+	padding: 0 2ch;
+	gap: 1ch;
+	white-space: nowrap;
+}
+
+.sep::before {
+	content: "";
+	position: absolute;
+	left: calc(0.5ch - 2px);
+	right: calc(0.5ch - 2px);
+	top: calc(50% - 0.5px);
+	border-top: 1px solid var(--white);
+}
+
+.sep > * {
+	position: relative;
+	background: var(--blue);
+	padding: 0 1ch;
+}
+
+.sep .lbl {
+	color: var(--white);
+}
+
+.sep .spacer {
+	flex: 1;
+	background: transparent;
+	padding: 0;
+}
+
+.sep .enc-state-wrap {
+	color: var(--lgray);
+}
+
+.enc-state {
+	color: var(--yellow);
+}
+
+body[data-enc="on"] .enc-state {
+	color: var(--black);
+	background: var(--lgreen);
+	padding: 0 0.5ch;
+}
+
+#msgform {
+	flex: none;
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	column-gap: 1ch;
+	align-items: start;
+	padding: calc(var(--row) / 4) 0 calc(var(--row) / 4);
+}
+
+.ps1 {
+	color: var(--white);
+	white-space: nowrap;
+}
+
+.ps1 .drive {
+	color: var(--yellow);
+}
+
+.input-wrap {
+	position: relative;
+	min-width: 0;
+	background: var(--cyan);
+	color: var(--black);
+}
+
+#msgbox {
+	display: block;
+	width: 100%;
+	min-height: var(--row);
+	max-height: calc(var(--row) * 8);
+	resize: none;
+	overflow-y: hidden;
+	border: 0;
+	margin: 0;
+	padding: 0 1ch;
+	background: transparent;
+	color: var(--black);
+	caret-color: var(--black);
+	caret-shape: underscore;
+	outline: none;
+	border-radius: 0;
+}
+
+#msgbox::placeholder {
+	color: #004f4f;
+	opacity: 1;
+}
+
+.input-wrap .cursor {
+	position: absolute;
+	left: 1ch;
+	top: 0;
+	display: none;
+	color: var(--black);
+}
+
+.input-wrap:focus-within:has(:placeholder-shown) .cursor {
+	display: block;
+}
+
+.input-wrap:has(:placeholder-shown) :is(textarea, input) {
+	caret-color: transparent;
+}
+
+.input-wrap:focus-within {
+	outline: 2px solid var(--yellow);
+	outline-offset: 0;
+}
+
+/* Turbo Vision push button: green face, hard black shadow */
+.tvbtn {
+	position: relative;
+	border: 0;
+	margin: 0 1ch calc(var(--row) / 2) 0;
+	padding: 0 1ch;
+	background: var(--green);
+	color: var(--black);
+	white-space: nowrap;
+	box-shadow: 1ch calc(var(--row) / 2) 0 0 var(--black);
+	border-radius: 0;
+}
+
+.tvbtn .hk {
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.tvbtn:hover {
+	background: var(--lgreen);
+}
+
+.tvbtn:focus-visible {
+	outline: 2px solid var(--yellow);
+	outline-offset: 0;
+	background: var(--lgreen);
+}
+
+.tvbtn:active {
+	box-shadow: none;
+	transform: translate(1ch, calc(var(--row) / 2));
+}
+
+#msgform .tvbtn {
+	margin-bottom: calc(var(--row) / 2);
+}
+
+/* disconnected: dim composer, frame turns red */
+body[data-ever]:not([data-conn="up"]) .chat-win::before {
+	border-color: var(--lred);
+}
+
+body:not([data-conn="up"]) #msgform .input-wrap {
+	background: var(--dgray);
+}
+
+body:not([data-conn="up"]) #msgform .tvbtn {
+	background: var(--dgray);
+	color: var(--lgray);
+}
+
+/* ==========================================================================
+ * Function-key bar (bottom row) — Norton Commander style
+ * ========================================================================== */
+
+.fkeys {
+	flex: none;
+	display: flex;
+	align-items: stretch;
+	height: var(--bar);
+	background: var(--black);
+	color: var(--lgray);
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.fk {
+	display: flex;
+	align-items: stretch;
+	border: 0;
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	color: inherit;
+	height: 100%;
+}
+
+.fk kbd {
+	display: flex;
+	align-items: center;
+	padding: 0 0 0 1ch;
+	color: var(--white);
+	background: var(--black);
+}
+
+.fk .lb {
+	display: flex;
+	align-items: center;
+	padding: 0 1ch;
+	margin-left: 1ch;
+	background: var(--cyan);
+	color: var(--black);
+	min-width: 6ch;
+}
+
+button.fk:hover .lb {
+	background: var(--lcyan);
+}
+
+button.fk:focus-visible {
+	outline: none;
+}
+
+button.fk:focus-visible .lb {
+	background: var(--yellow);
+}
+
+.fkeys .spacer {
+	flex: 1;
+}
+
+.fkeys .who {
+	align-self: center;
+	padding: 0 1ch;
+	color: var(--lgray);
+}
+
+.fkeys .who b {
+	font-weight: normal;
+	color: var(--yellow);
+}
+
+/* ==========================================================================
+ * Turbo Vision dialog
+ * ========================================================================== */
+
+dialog {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--black);
+	width: 54ch;
+	max-width: calc(100vw - 4ch);
+	overflow: visible;
+}
+
+dialog::backdrop {
+	background: rgba(0, 0, 0, 0.25);
+}
+
+.tv-dlg {
+	position: relative;
+	background: var(--lgray);
+	color: var(--black);
+	padding: calc(var(--row) * 1.5) 3ch var(--row);
+	box-shadow: 2ch var(--row) 0 0 var(--black);
+	margin-right: 2ch;
+	margin-bottom: var(--row);
+}
+
+.tv-dlg::before {
+	content: "";
+	position: absolute;
+	inset: calc(var(--row) / 2) calc(0.5ch - 2px);
+	border: 5px double var(--white);
+	pointer-events: none;
+}
+
+.dlg-title {
+	position: absolute;
+	top: 0;
+	left: 1ch;
+	right: 1ch;
+	height: var(--row);
+	display: flex;
+	justify-content: center;
+	white-space: nowrap;
+}
+
+.dlg-title h2 {
+	background: var(--lgray);
+	color: var(--white);
+	padding: 0 1ch;
+}
+
+.dlg-title .close {
+	position: absolute;
+	left: 1ch;
+	background: var(--lgray);
+	color: var(--white);
+}
+
+.dlg-title .close b {
+	color: var(--lgreen);
+	font-weight: normal;
+}
+
+.dlg-desc {
+	margin-bottom: var(--row);
+}
+
+#message:empty {
+	display: none;
+}
+
+#message {
+	background: var(--red);
+	color: var(--white);
+	padding: 0 1ch;
+	margin-bottom: var(--row);
+}
+
+#message::before {
+	content: "\25BA  "; /* ► */
+	color: var(--yellow);
+}
+
+.dlg-field label {
+	display: block;
+	color: var(--black);
+}
+
+.dlg-field label .hk {
+	color: var(--red);
+}
+
+.dlg-field .input-wrap {
+	background: var(--blue);
+	color: var(--white);
+	display: flex;
+	align-items: center;
+}
+
+.dlg-field .input-wrap::before,
+.dlg-field .input-wrap::after {
+	color: var(--lgreen);
+	flex: none;
+	width: 1ch;
+	text-align: center;
+}
+
+.dlg-field .input-wrap::before {
+	content: " ";
+}
+
+.dlg-field .input-wrap::after {
+	content: " ";
+}
+
+#enckey {
+	flex: 1;
+	min-width: 0;
+	width: 100%;
+	border: 0;
+	margin: 0;
+	padding: 0;
+	height: var(--row);
+	background: transparent;
+	color: var(--white);
+	caret-color: var(--white);
+	caret-shape: underscore;
+	outline: none;
+	border-radius: 0;
+}
+
+#enckey::placeholder {
+	color: var(--lblue);
+	opacity: 1;
+}
+
+.dlg-field .input-wrap .cursor {
+	left: 1ch;
+	color: var(--white);
+}
+
+.dlg-field .input-wrap:focus-within {
+	background: var(--blue);
+	outline: 2px solid var(--yellow);
+}
+
+.dlg-help {
+	margin-top: calc(var(--row) / 2);
+	color: var(--black);
+}
+
+.dlg-help::before {
+	content: "\25BA\00a0"; /* ► */
+	color: var(--blue);
+}
+
+.dlg-actions {
+	display: flex;
+	justify-content: center;
+	gap: 2ch;
+	margin-top: var(--row);
+}
+
+.dlg-actions .tvbtn {
+	min-width: 10ch;
+	margin-right: 0;
+}
+
+/* ==========================================================================
+ * Home: BBS login screen inside a COM1 terminal window
+ * ========================================================================== */
+
+.home .desk {
+	align-items: flex-start;
+	justify-content: center;
+	overflow: auto;
+}
+
+.term-win {
+	flex: 0 1 auto;
+	width: calc(80ch + 4ch);
+	max-width: 100%;
+	margin: auto 0;
+	padding: var(--row) 2ch calc(var(--row)) 2ch;
+}
+
+.term-win .win-title .title {
+	color: var(--white);
+}
+
+.screen {
+	background: var(--black);
+	color: var(--lgray);
+	padding: calc(var(--row) / 2) 2ch var(--row);
+	overflow: hidden;
+}
+
+.screen .modem {
+	color: var(--lgray);
+}
+
+.screen .modem .ok {
+	color: var(--lgreen);
+}
+
+.screen .logo {
+	margin: var(--row) 0 0;
+	display: flex;
+	justify-content: flex-start;
+}
+
+.screen .ansi {
+	font-size: 2rem; /* 2x pixel-doubled title block */
+	line-height: 2rem;
+	text-shadow: 2px 0 currentColor, 1ch 1rem 0 #262626, calc(1ch + 2px) 1rem 0 #262626;
+}
+
+.screen .ansi .r0 {
+	color: var(--yellow);
+}
+
+.screen .ansi .r1 {
+	color: var(--yellow);
+}
+
+.screen .ansi .r2 {
+	color: #ffaa55;
+}
+
+.screen .ansi .r3 {
+	color: var(--lred);
+}
+
+.tagline {
+	margin-top: var(--row);
+	color: var(--lcyan);
+	white-space: pre;
+	overflow: hidden;
+}
+
+.tagline .shade {
+	color: var(--cyan);
+}
+
+.tagline .name {
+	color: var(--white);
+}
+
+.sysop {
+	margin-top: calc(var(--row) / 2);
+	color: var(--lgray);
+}
+
+.sysop .star {
+	color: var(--yellow);
+}
+
+.sysop .hi {
+	color: var(--white);
+}
+
+.login {
+	margin-top: var(--row);
+	position: relative;
+	padding: var(--row) 2ch calc(var(--row) / 2);
+}
+
+.login::before {
+	content: "";
+	position: absolute;
+	inset: calc(var(--row) / 2) calc(0.5ch - 1px) 0;
+	border: 1px solid var(--lblue);
+	pointer-events: none;
+}
+
+.login .blabel {
+	position: absolute;
+	top: 0;
+	left: 2ch;
+	padding: 0 1ch;
+	background: var(--black);
+	color: var(--lblue);
+}
+
+.login .blabel b {
+	color: var(--white);
+	font-weight: normal;
+}
+
+.field {
+	display: grid;
+	grid-template-columns: 20ch minmax(0, 1fr);
+	column-gap: 1ch;
+	align-items: center;
+	margin-bottom: calc(var(--row) / 2);
+}
+
+.field label {
+	color: var(--yellow);
+	white-space: nowrap;
+}
+
+.field .input-wrap {
+	background: var(--blue);
+	color: var(--white);
+	max-width: 32ch;
+}
+
+.field input {
+	display: block;
+	width: 100%;
+	height: var(--row);
+	border: 0;
+	margin: 0;
+	padding: 0 1ch;
+	background: transparent;
+	color: var(--white);
+	caret-color: var(--white);
+	caret-shape: underscore;
+	outline: none;
+	border-radius: 0;
+}
+
+.field input::placeholder {
+	color: var(--lblue);
+	opacity: 1;
+}
+
+.field .input-wrap .cursor {
+	color: var(--white);
+}
+
+.field .input-wrap:focus-within {
+	outline: 2px solid var(--yellow);
+	background: var(--blue);
+}
+
+.session {
+	margin-bottom: calc(var(--row) / 2);
+}
+
+.session .hi {
+	color: var(--white);
+}
+
+.session .faint {
+	color: var(--cyan);
+}
+
+.session .star {
+	color: var(--yellow);
+}
+
+.login-error {
+	margin: 0 0 calc(var(--row) / 2);
+	background: var(--red);
+	color: var(--white);
+	padding: 0 1ch;
+	justify-self: start;
+	display: inline-block;
+}
+
+.login-error b {
+	color: var(--yellow);
+	font-weight: normal;
+}
+
+.login-actions {
+	display: flex;
+	align-items: flex-start;
+	gap: 3ch;
+	margin-top: calc(var(--row) / 2);
+	padding-left: 21ch;
+	flex-wrap: wrap;
+}
+
+.login-actions .hint {
+	color: var(--lgray);
+}
+
+.login-actions .hint kbd {
+	font: inherit;
+	color: var(--white);
+}
+
+.screen .tvbtn {
+	box-shadow: 1ch calc(var(--row) / 2) 0 0 #1c1c1c;
+}
+
+/* ==========================================================================
+ * Responsive
+ * ========================================================================== */
+
+@media (max-width: 900px) {
+	.desk {
+		padding: calc(var(--row) / 2) 3ch var(--row) 1ch;
+	}
+	.menubar .clock {
+		display: none;
+	}
+}
+
+@media (max-width: 640px) {
+	:root {
+		--bar: 1.75rem;
+	}
+
+	.desk,
+	.home .desk {
+		padding: 0;
+		background: var(--blue);
+	}
+
+	.win {
+		box-shadow: none;
+	}
+
+	.fk.opt,
+	.fkeys .who {
+		display: none;
+	}
+
+	.home .desk {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.term-win {
+		flex: 1 0 auto;
+	}
+
+	.screen {
+		flex: 1 0 auto;
+	}
+
+	.menubar .right {
+		gap: 1ch;
+	}
+
+	.fk .lb {
+		min-width: 0;
+		margin-left: 0.5ch;
+	}
+
+	.fk kbd {
+		padding-left: 0.5ch;
+	}
+
+	.fkeys {
+		justify-content: space-between;
+	}
+
+	.fkeys .spacer {
+		display: none;
+	}
+
+	.bulletin {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--row);
+		padding: var(--row) 1ch calc(var(--row) - 2px);
+	}
+
+	.bulletin .blabel {
+		left: 1ch;
+	}
+
+	.line {
+		grid-template-columns: auto minmax(0, 1fr);
+	}
+
+	.line .ts {
+		display: none;
+	}
+
+	.sep .hint {
+		display: none;
+	}
+
+	.term-win {
+		width: 100%;
+		margin: 0;
+		padding: var(--row) 1ch calc(var(--row) / 2);
+		min-height: 100%;
+	}
+
+	.screen {
+		padding: calc(var(--row) / 2) 1ch var(--row);
+		min-height: 100%;
+	}
+
+	.login {
+		padding: var(--row) 1ch calc(var(--row) / 2);
+	}
+
+	.login .blabel {
+		left: 1ch;
+	}
+
+	.field {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.field .input-wrap {
+		max-width: none;
+	}
+
+	.login-actions {
+		padding-left: 0;
+	}
+
+	.tagline .shade {
+		display: none;
+	}
+
+	.screen .ansi {
+		font-size: 1rem;
+		line-height: 1rem;
+		text-shadow: 1px 0 currentColor, 1ch 0.5rem 0 #262626, calc(1ch + 1px) 0.5rem 0 #262626;
+	}
+
+	.tv-dlg {
+		padding: calc(var(--row) * 1.5) 2ch var(--row);
+		margin-right: 0;
+		box-shadow: 1ch calc(var(--row) / 2) 0 0 var(--black);
+	}
+
+	dialog {
+		max-width: calc(100vw - 2ch);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+		transition: none !important;
+		scroll-behavior: auto !important;
+	}
+	.tvbtn:active {
+		transform: none;
+	}
+}
+
+/* only one cursor on screen: the hint cursor hides while a field has focus */
+.login:focus-within .hint .cursor {
+	display: none;
+}

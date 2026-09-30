@@ -1,51 +1,113 @@
 {{ define "home_logged_in" }}
-	<div>
-		Logged in as {{ .Username }} ({{ .UserID }})
+	<div class="session">
+		<p><span class="star">***</span> Welcome back, <span class="hi" data-uname>{{ .Username }}</span>! <span class="faint">[session {{ slice .UserID 0 7 }}]</span></p>
+		<p><span class="star">***</span> Your handle is on file. Pick a room to join.</p>
 	</div>
 {{ end }}
 {{ define "home_login" }}
-	<div class="flex gap-2 flex-col">
-		<label for="username">
-			Username
-		</label>
-		<input name="username" class="bg-sky-300/10 hover:bg-sky-300/20
-		transition-all duration-300 rounded-md p-2"></input>
+	<div class="field">
+		<label for="username">Enter your handle:</label>
+		<div class="input-wrap">
+			<input id="username" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder=" " maxlength="64" required autofocus>
+			<span class="cursor" aria-hidden="true"></span>
+		</div>
 	</div>
 {{ end }}
 {{ define "home" }}
 	<!DOCTYPE html>
-	<html>
+	<html lang="en">
 	<head>
-			<title>Message Kaskade</title>
-			<!-- <script src="https://gitcdn.ir/library/jquery/3.5.1/jquery-3.5.1.min.js"></script> -->
-			<meta name="viewport" content="width=device-width, initial-scale=1">
-			<!-- <script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js"></script> -->
-			<script src="/static/tailwind4.1.10.global.js" ></script>
-			<script src="/static/jquery3.5.1.min.js" ></script>
+		<meta charset="utf-8">
+		<title>EMSG BBS - Login</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="color-scheme" content="dark">
+		<meta name="theme-color" content="#aaaaaa">
+		<link rel="stylesheet" href="/static/terminal-dos.css">
 	</head>
-	<body class="flex items-center justify-center py-4 px-2 min-h-screen bg-gray-950 text-white">
-		<form method="post" to="/login" class="w-full max-w-md rounded-sm bg-blue-600/10 rounded-md bg-clip-padding backdrop-filter backdrop-blur-2xl bg-opacity-10 border border-gray-100 flex flex-col gap-2 p-4 mx-auto"> 
-			{{if .IsLoggedIn}}
-				{{ template "home_logged_in" . }}
-			{{else}}
-				{{ template "home_login" }}
-			{{end}}
-			<div class="flex gap-2 flex-col">
-				<label for="roomid">
-					Room ID
-				</label>
-				<input name="roomid" class="bg-sky-300/10 hover:bg-sky-300/20
-				transition-all duration-300 rounded-md p-2" value="{{ .RoomID }}"></div>
-			</div>
-			
-			{{ if .Error }}
-				<p class="text-red-400">
-					{{ .ErrorMessage }}
-				</p>
-			{{ end }}
-			<button type="submit" 
-				class="p-2 hover:bg-sky-500/20 transition-all duration-300 rounded-lg cursor-pointer">Enter</button>
-		</form>
+	<body class="home">
+		<header class="menubar">
+			<span class="sys" aria-hidden="true">&#8801;</span>
+			<nav class="menu" aria-label="Menu">
+				<span class="mi opt" aria-disabled="true"><span class="hk">F</span>ile</span>
+				<span class="mi opt" aria-disabled="true"><span class="hk">R</span>oom</span>
+				<span class="mi off" aria-disabled="true" title="Available after login"><span class="hk">K</span>ey</span>
+				<span class="mi opt" aria-disabled="true"><span class="hk">H</span>elp</span>
+			</nav>
+			<span class="spacer"></span>
+			<span class="right" aria-hidden="true">
+				<span>COM1 14400 8N1</span>
+			</span>
+		</header>
+
+		<div class="desk">
+			<section class="win term-win" aria-labelledby="win-title">
+				<div class="win-title">
+					<span class="close" aria-hidden="true">[<b>&#9632;</b>]</span>
+					<h1 class="title" id="win-title">Terminal - EMSG BBS</h1>
+					<span class="zoom" aria-hidden="true">[<b>&#8597;</b>]</span>
+				</div>
+
+				<main class="screen">
+					<div class="modem" aria-hidden="true">
+						<p>ATDT 555-3674</p>
+						<p class="ok">CONNECT 14400/ARQ/V42BIS</p>
+					</div>
+
+					<div class="logo">
+<pre class="ansi" role="img" aria-label="EMSG"><span class="r0">▄█████ ██▄  ▄██ ▄█████ ▄█████</span>
+<span class="r1">██▄▄   ██▀██▀██ ██▄▄▄  ██ ▄▄▄</span>
+<span class="r2">██▀▀   ██    ██  ▀▀▀██ ██ ▀██</span>
+<span class="r3">▀█████ ██    ██ █████▀ ▀█████</span></pre>
+					</div>
+
+					<p class="tagline"><span class="shade" aria-hidden="true">▓▒░ </span><span class="name">Message Kaskade BBS</span> &middot; live relay<span class="shade" aria-hidden="true"> ░▒▓</span></p>
+					<p class="sysop"><span class="star">***</span> Node 1 of 1. Messages are relayed live and never stored.</p>
+
+					<form method="post" action="/" class="login">
+						<span class="blabel" aria-hidden="true">Logon <b>1/1</b></span>
+						{{if .IsLoggedIn}}
+							{{ template "home_logged_in" . }}
+						{{else}}
+							{{ template "home_login" }}
+						{{end}}
+						<div class="field">
+							<label for="roomid">Select room:</label>
+							<div class="input-wrap">
+								<input id="roomid" name="roomid" value="{{ .RoomID }}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder=" lobby" {{if .IsLoggedIn}}autofocus{{end}}>
+								<span class="cursor" aria-hidden="true"></span>
+							</div>
+						</div>
+
+						{{ if .Error }}
+							<p class="login-error" role="alert"><b>ERROR:</b> {{ .ErrorMessage }}. Try again.</p>
+						{{ end }}
+
+						<div class="login-actions">
+							<button type="submit" class="tvbtn default">[ Connect ]</button>
+							<span class="hint">press <kbd>Enter</kbd> to log on<span class="cursor" aria-hidden="true"></span></span>
+						</div>
+					</form>
+				</main>
+			</section>
+		</div>
+
+		<footer class="fkeys" aria-hidden="true">
+			<span class="fk"><kbd>Tab</kbd><span class="lb">Field</span></span>
+			<span class="fk"><kbd>Enter</kbd><span class="lb">Connect</span></span>
+			<span class="fk opt"><kbd>F2</kbd><span class="lb">Key</span></span>
+			<span class="spacer"></span>
+			<span class="who">EMSG.EXE v1.0</span>
+		</footer>
+		<script>
+			// Stored usernames are HTML-escaped server-side; decode once for display.
+			(function () {
+				var t = document.createElement("textarea");
+				document.querySelectorAll("[data-uname]").forEach(function (n) {
+					t.innerHTML = n.textContent;
+					n.textContent = t.value;
+				});
+			})();
+		</script>
 	</body>
 	</html>
 {{ end }}

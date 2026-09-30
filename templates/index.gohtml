@@ -1,51 +1,114 @@
+{{ define "logo_svg" }}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 9.5a10 10 0 0 1 15 0"/><path d="M7.5 12.7a5.8 5.8 0 0 1 9 0"/><path d="M12 16.2h.01" stroke-width="3.2"/><path d="M12 20.5v-1.2"/></svg>{{ end }}
+
 {{ define "home_logged_in" }}
-	<div>
-		Logged in as {{ .Username }} ({{ .UserID }})
+	<div class="identity">
+		<span class="avatar" data-user-id="{{ .UserID }}" aria-hidden="true">{{ slice (printf "%s?" .Username) 0 1 }}</span>
+		<div class="identity__text">
+			<span class="identity__label">Signed in as</span>
+			<span class="identity__name" data-username="{{ .Username }}">{{ .Username }}</span>
+		</div>
+		<span class="identity__id" title="Session ID">{{ slice (printf "%s·····" .UserID) 0 5 }}</span>
 	</div>
 {{ end }}
+
 {{ define "home_login" }}
-	<div class="flex gap-2 flex-col">
-		<label for="username">
-			Username
-		</label>
-		<input name="username" class="bg-sky-300/10 hover:bg-sky-300/20
-		transition-all duration-300 rounded-md p-2"></input>
+	<div class="field">
+		<label class="field__label" for="username">Your name</label>
+		<div class="field__control">
+			<svg class="field__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+			<input class="input" id="username" name="username" autocomplete="nickname" autocapitalize="off" spellcheck="false" placeholder="How others will see you" required autofocus>
+		</div>
 	</div>
 {{ end }}
+
 {{ define "home" }}
-	<!DOCTYPE html>
-	<html>
-	<head>
-			<title>Message Kaskade</title>
-			<!-- <script src="https://gitcdn.ir/library/jquery/3.5.1/jquery-3.5.1.min.js"></script> -->
-			<meta name="viewport" content="width=device-width, initial-scale=1">
-			<!-- <script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js"></script> -->
-			<script src="/static/tailwind4.1.10.global.js" ></script>
-			<script src="/static/jquery3.5.1.min.js" ></script>
-	</head>
-	<body class="flex items-center justify-center py-4 px-2 min-h-screen bg-gray-950 text-white">
-		<form method="post" to="/login" class="w-full max-w-md rounded-sm bg-blue-600/10 rounded-md bg-clip-padding backdrop-filter backdrop-blur-2xl bg-opacity-10 border border-gray-100 flex flex-col gap-2 p-4 mx-auto"> 
-			{{if .IsLoggedIn}}
-				{{ template "home_logged_in" . }}
-			{{else}}
-				{{ template "home_login" }}
-			{{end}}
-			<div class="flex gap-2 flex-col">
-				<label for="roomid">
-					Room ID
-				</label>
-				<input name="roomid" class="bg-sky-300/10 hover:bg-sky-300/20
-				transition-all duration-300 rounded-md p-2" value="{{ .RoomID }}"></div>
-			</div>
-			
-			{{ if .Error }}
-				<p class="text-red-400">
-					{{ .ErrorMessage }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<meta name="theme-color" content="#05060f">
+	<title>emsg · Emergency messenger</title>
+	<link rel="stylesheet" href="/static/glass.css">
+</head>
+<body>
+	<div class="aurora" aria-hidden="true"><div class="aurora__veil"></div></div>
+
+	<main class="home">
+		<section class="card glass" aria-labelledby="home-title">
+			<header class="card__head">
+				<span class="logo">{{ template "logo_svg" }}</span>
+				<h1 class="card__title" id="home-title">emsg</h1>
+				<p class="card__subtitle">
+					{{ if .IsLoggedIn }}Pick a room to join — anyone with the same room ID lands in the same chat.{{ else }}Emergency messenger for your local network. No internet required.{{ end }}
 				</p>
-			{{ end }}
-			<button type="submit" 
-				class="p-2 hover:bg-sky-500/20 transition-all duration-300 rounded-lg cursor-pointer">Enter</button>
-		</form>
-	</body>
-	</html>
+			</header>
+
+			<form method="post" action="/">
+				{{ if .IsLoggedIn }}
+					{{ template "home_logged_in" . }}
+				{{ else }}
+					{{ template "home_login" }}
+				{{ end }}
+
+				<div class="field">
+					<label class="field__label" for="roomid">Room ID</label>
+					<div class="field__control">
+						<svg class="field__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></svg>
+						<input class="input" id="roomid" name="roomid" value="{{ .RoomID }}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="e.g. lobby" {{ if .IsLoggedIn }}required autofocus{{ end }}>
+					</div>
+				</div>
+
+				{{ if .Error }}
+					<p class="alert" role="alert">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+						<span>{{ .ErrorMessage }}</span>
+					</p>
+				{{ end }}
+
+				<button type="submit" class="btn btn--primary">
+					<span>{{ if .IsLoggedIn }}Join room{{ else }}Enter{{ end }}</span>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+				</button>
+			</form>
+		</section>
+
+		<ul class="home__foot" aria-label="Features">
+			<li class="chip"><span class="dot" aria-hidden="true"></span>Works offline on your LAN</li>
+			<li class="chip">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+				Optional shared-key encryption
+			</li>
+		</ul>
+	</main>
+
+	<script>
+		// Decode the entities the server adds to usernames and colour the avatar ring.
+		(function () {
+			function decode(s) {
+				return String(s).replace(/&(lt|gt|quot|#34|#39|amp);/g, function (_, e) {
+					return { lt: "<", gt: ">", quot: '"', "#34": '"', "#39": "'", amp: "&" }[e];
+				});
+			}
+			function hue(id) {
+				var hues = [268, 190, 330, 150, 38, 212, 8, 290, 95, 172, 245, 50];
+				var v = 0x811c9dc5;
+				for (var i = 0; i < id.length; i++) {
+					v ^= id.charCodeAt(i);
+					v = Math.imul(v, 0x01000193) >>> 0;
+				}
+				return hues[v % hues.length];
+			}
+			document.querySelectorAll("[data-username]").forEach(function (el) {
+				el.textContent = decode(el.dataset.username);
+			});
+			document.querySelectorAll(".avatar[data-user-id]").forEach(function (el) {
+				var name = document.querySelector("[data-username]");
+				if (name) el.textContent = Array.from(name.textContent.trim() || "?")[0];
+				el.style.setProperty("--u", "hsl(" + hue(el.dataset.userId) + " 85% 70%)");
+			});
+		})();
+	</script>
+</body>
+</html>
 {{ end }}

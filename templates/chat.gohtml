@@ -1,65 +1,108 @@
 {{ define "chat" }}
-	<!DOCTYPE html>
-	<html>
-	<head>
-			<title>MsgKas: {{ .RoomID }}</title>
-			<meta name="viewport" content="width=device-width, initial-scale=1">
-			<!-- For use in IRAN behind GFW -->
-			<!-- <script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js" ></script> -->
-			<!-- <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> -->
-			<script src="/static/tailwind4.1.10.global.js" ></script>
-	</head>
-	<body class="bg-gray-950 text-white min-h-screen p-1 xl:p-6" >
-		<div id="messages" class="flex flex-col overflow-auto pb-36">
-			<div class="text-slate-300 text-2xl p-4 text-center">Welcome to {{ .RoomID }} </div>
-		</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+	<meta name="theme-color" content="#05060f">
+	<title>#{{ .RoomID }} · emsg</title>
+	<link rel="stylesheet" href="/static/glass.css">
+</head>
+<body class="chat is-offline">
+	<div class="aurora" aria-hidden="true"><div class="aurora__veil"></div></div>
 
-		<button class="fixed top-3 right-3 p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors duration-200" command="show-modal" commandfor="encKeyDia" title="Encryption key">
-			<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.4 2.7a2.5 2.5 0 0 1 3.4 0l5.5 5.5a2.5 2.5 0 0 1 0 3.4l-3.7 3.7a2.5 2.5 0 0 1-3.4 0L8.7 9.8a2.5 2.5 0 0 1 0-3.4z"/><path d="m14 7 3 3"/><path d="m9.4 10.6-6.814 6.814A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814"/></svg>
-		</button>
+	<div class="app">
+		<header class="topbar glass">
+			<a class="topbar__home" href="/" title="Back to start" aria-label="Back to start">
+				<span class="logo logo--sm">{{ template "logo_svg" }}</span>
+			</a>
+			<div class="room">
+				<h1 class="room__name"><span class="room__hash" aria-hidden="true">#</span>{{ .RoomID }}</h1>
+				<span class="room__status"><span class="dot" aria-hidden="true"></span><span id="status-text">Connecting…</span></span>
+			</div>
+			<div class="topbar__spacer"></div>
+			<button type="button" class="icon-btn key-btn" command="show-modal" commandfor="encKeyDia" title="Encryption key" aria-label="Encryption key">
+				<svg class="icon-unlocked" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.4 2.7a2.5 2.5 0 0 1 3.4 0l5.5 5.5a2.5 2.5 0 0 1 0 3.4l-3.7 3.7a2.5 2.5 0 0 1-3.4 0L8.7 9.8a2.5 2.5 0 0 1 0-3.4z"/><path d="m14 7 3 3"/><path d="m9.4 10.6-6.814 6.814A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814"/></svg>
+				<svg class="icon-locked" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><path d="M12 15v2"/></svg>
+			</button>
+			<div class="me">
+				<div class="me__name">
+					<strong id="me-name">{{ .Username }}</strong>
+					<span>{{ slice (printf "%s·····" .UserID) 0 5 }}</span>
+				</div>
+				<span class="avatar" id="me-avatar" title="{{ .Username }}" aria-hidden="true">{{ slice (printf "%s?" .Username) 0 1 }}</span>
+			</div>
+		</header>
 
-		<dialog id="encKeyDia" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm rounded-xl bg-gray-900 border border-gray-800 text-white shadow-xl p-0 backdrop:bg-black/60">
-			<form class="flex flex-col gap-4 p-6">
-				<div class="flex flex-col gap-1">
-					<h3 class="text-base font-semibold text-white">Encryption key required</h3>
-					<p id="message" class="text-sm text-gray-400"></p>
+		<main id="messages" class="messages" aria-live="polite" aria-label="Messages">
+			<section class="welcome glass">
+				<span class="logo">{{ template "logo_svg" }}</span>
+				<h2>Welcome to <span>#{{ .RoomID }}</span></h2>
+				<p>Everyone who joins this room on the network will see your messages. New messages appear here as they arrive.</p>
+				<div class="welcome__hints">
+					<span class="chip"><kbd>Enter</kbd> send</span>
+					<span class="chip"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> new line</span>
+					<span class="chip">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+						Key icon to encrypt
+					</span>
 				</div>
-				<div class="flex flex-col gap-1.5">
-					<label for="enckey" class="text-xs font-medium text-gray-400 uppercase tracking-wide">Key</label>
-					<input id="enckey" type="password" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-gray-500 transition-colors duration-200" placeholder="Enter encryption key">
-				</div>
-				<div class="flex gap-2 justify-end">
-					<button value="cancel" formmethod="dialog" class="px-4 py-2 text-sm rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors duration-200">Cancel</button>
-					<button id="confirmBtn" formmethod="dialog" value="confirm" class="px-4 py-2 text-sm rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200">Confirm</button>
-				</div>
+			</section>
+		</main>
+
+		<div class="dock">
+			<div id="conn-stat" class="conn-stat" role="status">Connecting...</div>
+			<form id="msgform" class="composer glass" autocomplete="off">
+				<label for="msgbox" class="sr-only">Message</label>
+				<textarea id="msgbox" rows="1" placeholder="Message #{{ .RoomID }}" enterkeyhint="send"></textarea>
+				<button type="submit" class="send-btn" title="Send (Enter)" aria-label="Send message">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 2.5 10.6 13.4"/><path d="M21.5 2.5 14.6 21.3a.6.6 0 0 1-1.1 0l-2.9-7.9-7.9-2.9a.6.6 0 0 1 0-1.1Z" fill="currentColor" fill-opacity="0.18"/></svg>
+				</button>
 			</form>
-		</dialog>
-
-		<div class="fixed bottom-4 md:bottom-10 left-2 md:left-10 right-2 md:right-10">
-			<div id="conn-stat" class="absolute bottom-full right-0 mb-1 px-2 py-0.5 rounded text-xs bg-gray-800 text-gray-400">Connecting...</div>
-			<form
-				id="msgform"
-				onsubmit="handleSubmit(event)"
-				class="flex items-end rounded-xl overflow-hidden bg-gray-900 border border-gray-800">
-				<textarea
-					onkeydown="handleKeyPressEvent(event)"
-					class="grow bg-transparent px-4 py-3 text-sm text-white placeholder-gray-600 resize-none outline-none max-h-40"
-					placeholder="Type a message..."
-					rows="1"
-					id="msgbox"></textarea>
-				<button type="submit" class="shrink-0 px-4 py-3 text-sm text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer">Send</button>
-			</form>
+			<p class="composer__hint">
+				<span class="enc-off"><kbd>Enter</kbd> to send · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> for a new line</span>
+				<span class="enc-on">End-to-end encrypted with your shared key · <kbd>Enter</kbd> to send</span>
+			</p>
 		</div>
+	</div>
 
-		<script>
-			window.chatdata = {
-				room_id: {{ .RoomID }},
-				user_id: {{ .UserID }},
-				username: {{ .Username }},
-			}
-		</script>
-		<script src="/static/wasm_exec.js"></script>
-		<script src="/static/index.js" ></script>
-	</body>
-	</html>
+	<dialog id="encKeyDia" class="dialog" aria-labelledby="enc-title">
+		<form method="dialog">
+			<div class="dialog__head">
+				<span class="dialog__icon" aria-hidden="true">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><path d="M12 15v2"/></svg>
+				</span>
+				<div>
+					<h3 id="enc-title">Encryption key</h3>
+					<p class="dialog__desc">Messages are encrypted in your browser. Everyone in the room needs the same key. Leave empty to send plain text.</p>
+				</div>
+			</div>
+			<p id="message" class="dialog__error" role="alert"></p>
+			<div class="field">
+				<label class="field__label" for="enckey">Shared key</label>
+				<div class="field__control">
+					<svg class="field__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></svg>
+					<input id="enckey" class="input" type="password" placeholder="Enter encryption key" autocomplete="off" autofocus>
+				</div>
+			</div>
+			<div class="dialog__actions">
+				<!-- confirm comes first in the DOM so Enter in the key field confirms;
+				     the row is reversed visually -->
+				<button class="btn btn--primary" id="confirmBtn" value="confirm">Save key</button>
+				<button class="btn btn--ghost" value="cancel" formnovalidate>Cancel</button>
+			</div>
+		</form>
+	</dialog>
+
+	<script>
+		window.chatdata = {
+			room_id: {{ .RoomID }},
+			user_id: {{ .UserID }},
+			username: {{ .Username }},
+		}
+	</script>
+	<script src="/static/wasm_exec.js"></script>
+	<script src="/static/index.js"></script>
+</body>
+</html>
 {{ end }}

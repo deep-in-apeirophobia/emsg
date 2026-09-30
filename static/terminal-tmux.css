@@ -1,0 +1,1502 @@
+/* ==================================================================
+ * emsg — "tmux / neovim split-pane workstation" theme
+ * Palette: Catppuccin Mocha. System monospace only, no external assets.
+ * ================================================================== */
+
+:root {
+	--rosewater: #f5e0dc;
+	--flamingo: #f2cdcd;
+	--pink: #f5c2e7;
+	--mauve: #cba6f7;
+	--red: #f38ba8;
+	--maroon: #eba0ac;
+	--peach: #fab387;
+	--yellow: #f9e2af;
+	--green: #a6e3a1;
+	--teal: #94e2d5;
+	--sky: #89dceb;
+	--sapphire: #74c7ec;
+	--blue: #89b4fa;
+	--lavender: #b4befe;
+	--text: #cdd6f4;
+	--subtext1: #bac2de;
+	--subtext0: #a6adc8;
+	--overlay2: #9399b2;
+	--overlay1: #7f849c;
+	--overlay0: #6c7086;
+	--surface2: #585b70;
+	--surface1: #45475a;
+	--surface0: #313244;
+	--base: #1e1e2e;
+	--mantle: #181825;
+	--crust: #11111b;
+
+	--mono: ui-monospace, "JetBrains Mono", "Cascadia Code", "SF Mono", "Fira Code", Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace;
+	--fs: 14px;
+	--lh: 1.55;
+	--nickw: 11ch;
+	--arrow: 0.75em;
+	--sb-h: 1.9em;
+	--usersw: 24ch;
+	color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	height: 100%;
+}
+
+body {
+	background: var(--base);
+	color: var(--text);
+	font-family: var(--mono);
+	font-size: var(--fs);
+	line-height: var(--lh);
+	font-variant-ligatures: none;
+	-webkit-font-smoothing: antialiased;
+	-webkit-text-size-adjust: 100%;
+}
+
+::selection {
+	background: var(--surface2);
+	color: var(--text);
+}
+
+button,
+input,
+textarea {
+	font: inherit;
+	color: inherit;
+	letter-spacing: inherit;
+}
+
+a {
+	color: var(--blue);
+}
+
+kbd {
+	font: inherit;
+	color: var(--peach);
+	background: var(--surface0);
+	border-radius: 3px;
+	padding: 0 0.35ch;
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.dim {
+	color: var(--overlay1);
+}
+
+.hl {
+	color: var(--mauve);
+}
+
+:focus-visible {
+	outline: 2px solid var(--peach);
+	outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------
+ * Page frame: panes on top, tmux status line at the bottom
+ * ------------------------------------------------------------------ */
+
+body.tmux {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	height: 100dvh;
+	overflow: hidden;
+	padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+}
+
+.workspace {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	position: relative;
+}
+
+.pane {
+	min-width: 0;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	--pane-accent: var(--surface1);
+}
+
+.pane-chat,
+.pane-home {
+	flex: 1;
+	--pane-accent: var(--mauve);
+}
+
+/* tmux "pane-border-status top": the border line carries the pane title */
+.pane-head {
+	flex: none;
+	display: flex;
+	align-items: center;
+	gap: 1ch;
+	height: 1.9em;
+	padding: 0 1ch 0 0;
+	white-space: nowrap;
+	overflow: hidden;
+	color: var(--overlay2);
+	font-size: 0.93em;
+}
+
+.pane-head::before {
+	content: "";
+	flex: none;
+	width: 1.5ch;
+	border-top: 1px solid var(--pane-accent);
+}
+
+.ph-fill {
+	flex: 1;
+	min-width: 1ch;
+	border-top: 1px solid var(--pane-accent);
+}
+
+.pane-head::after {
+	content: "";
+	flex: none;
+	width: 1ch;
+	margin-right: -1ch;
+	border-top: 1px solid var(--pane-accent);
+}
+
+.ph-idx {
+	color: var(--crust);
+	background: var(--pane-accent);
+	padding: 0 0.6ch;
+	border-radius: 3px;
+	font-weight: 700;
+}
+
+.pane-users .ph-idx {
+	color: var(--subtext0);
+}
+
+.ph-title {
+	color: var(--text);
+	font-weight: 700;
+}
+
+.pane-chat .ph-title {
+	color: var(--mauve);
+}
+
+.ph-topic {
+	color: var(--overlay1);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	min-width: 0;
+}
+
+.ph-topic::before {
+	content: "│ ";
+	color: var(--surface2);
+}
+
+.ph-who,
+.ph-count {
+	color: var(--overlay2);
+}
+
+.ph-count {
+	color: var(--green);
+}
+
+/* when the relay is down the active pane border turns red */
+body[data-conn="down"] .pane-chat {
+	--pane-accent: var(--red);
+}
+
+/* ------------------------------------------------------------------
+ * Chat buffer (weechat-like)
+ * ------------------------------------------------------------------ */
+
+.buffer {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 0.4em 1ch 0.6em 1ch;
+	scrollbar-width: thin;
+	scrollbar-color: var(--surface1) transparent;
+	overscroll-behavior: contain;
+}
+
+.motd {
+	display: flex;
+	align-items: center;
+	gap: 2.5ch;
+	padding: 0.4em 0 0.8em calc(5ch + var(--nickw) + 2ch);
+	flex-wrap: wrap;
+}
+
+.logo,
+.big-logo {
+	margin: 0;
+	font-family: var(--mono);
+	line-height: 1;
+	font-weight: 700;
+	background: linear-gradient(90deg, var(--mauve), var(--pink) 45%, var(--peach));
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+.logo {
+	font-size: 1.25em;
+}
+
+.motd-side p {
+	margin: 0;
+}
+
+.motd-name {
+	font-weight: 700;
+	color: var(--text);
+}
+
+.motd-name .ver {
+	color: var(--overlay2);
+	font-weight: 400;
+}
+
+.self-name {
+	color: var(--rosewater);
+	font-weight: 700;
+}
+
+.line {
+	display: grid;
+	grid-template-columns: 5ch var(--nickw) minmax(0, 1fr);
+	column-gap: 1ch;
+	align-items: start;
+	padding: 0 0.5ch;
+	border-radius: 3px;
+}
+
+.line:hover {
+	background: color-mix(in srgb, var(--surface0) 45%, transparent);
+}
+
+.line .ts {
+	color: var(--overlay0);
+	font-variant-numeric: tabular-nums;
+}
+
+.line:hover .ts {
+	color: var(--overlay2);
+}
+
+.line .nick {
+	text-align: right;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-weight: 700;
+}
+
+.line .text {
+	min-width: 0;
+	padding-left: 1ch;
+	border-left: 1px solid var(--surface1);
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+.line.self {
+	background: color-mix(in srgb, var(--surface0) 38%, transparent);
+}
+
+.line.self .text {
+	border-left-color: var(--mauve);
+}
+
+.line.self + .line.self,
+.line.other + .line.other {
+	margin-top: 0;
+}
+
+.nick.me,
+.me {
+	color: var(--rosewater);
+}
+
+.line .msg[data-encfailed] {
+	color: var(--red);
+	font-style: italic;
+}
+
+.enc-tag {
+	display: inline-block;
+	margin-right: 1ch;
+	padding: 0 0.6ch;
+	line-height: 1.35;
+	font-size: 0.82em;
+	font-weight: 700;
+	vertical-align: 0.08em;
+	color: var(--crust);
+	background: var(--green);
+	border-radius: 3px;
+}
+
+/* system lines: weechat prefixes --> <-- -- !! */
+.line.sys .pfx {
+	font-weight: 700;
+}
+
+.line.sys .text {
+	color: var(--overlay2);
+}
+
+.line.join .pfx {
+	color: var(--green);
+}
+
+.line.leave .pfx {
+	color: var(--red);
+}
+
+.line.info .pfx,
+.line.good .pfx {
+	color: var(--blue);
+}
+
+.line.warn .pfx,
+.line.warn .text {
+	color: var(--red);
+}
+
+.line.good .text {
+	color: var(--green);
+}
+
+.line.info .text {
+	color: var(--subtext0);
+}
+
+.line .who {
+	font-weight: 700;
+}
+
+.line .faint {
+	color: var(--overlay0);
+}
+
+/* deterministic nick colours */
+.c0 { color: var(--pink); }
+.c1 { color: var(--peach); }
+.c2 { color: var(--green); }
+.c3 { color: var(--sky); }
+.c4 { color: var(--yellow); }
+.c5 { color: var(--lavender); }
+.c6 { color: var(--teal); }
+.c7 { color: var(--maroon); }
+.c8 { color: var(--blue); }
+.c9 { color: var(--flamingo); }
+
+/* ------------------------------------------------------------------
+ * Composer: neovim buffer + lualine-ish statusline + cmdline
+ * ------------------------------------------------------------------ */
+
+.composer {
+	flex: none;
+	border-top: 1px solid var(--surface0);
+	background: var(--mantle);
+}
+
+#msgform {
+	display: flex;
+	align-items: flex-start;
+	padding: 0.35em 1ch 0.35em 0;
+}
+
+.gutter {
+	flex: none;
+	display: flex;
+	align-items: flex-start;
+	gap: 0.6ch;
+	width: 5ch;
+	padding-top: 0.25em;
+	justify-content: flex-end;
+	color: var(--overlay0);
+	cursor: text;
+	user-select: none;
+}
+
+.gnum {
+	font-variant-numeric: tabular-nums;
+}
+
+.gbar {
+	width: 2px;
+	height: 1.2em;
+	margin-top: 0.15em;
+	background: var(--surface1);
+	border-radius: 1px;
+}
+
+body[data-mode="insert"] .gnum {
+	color: var(--peach);
+	font-weight: 700;
+}
+
+body[data-mode="insert"] .gbar {
+	background: var(--green);
+}
+
+#msgbox {
+	flex: 1;
+	min-width: 0;
+	display: block;
+	resize: none;
+	border: 0;
+	background: transparent;
+	padding: 0.25em 1ch;
+	margin: 0;
+	min-height: calc(var(--lh) * 1em + 0.5em);
+	max-height: calc(var(--lh) * 8em + 0.5em);
+	line-height: var(--lh);
+	overflow-y: hidden;
+	caret-color: var(--rosewater);
+	border-radius: 4px;
+	outline: none;
+}
+
+#msgbox::placeholder {
+	color: var(--overlay0);
+}
+
+#msgbox:focus-visible {
+	box-shadow: inset 0 0 0 1px var(--surface1);
+}
+
+body[data-mode="insert"] #msgbox {
+	background: color-mix(in srgb, var(--surface0) 45%, transparent);
+}
+
+.send {
+	flex: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.8ch;
+	margin-left: 1ch;
+	padding: 0.25em 1.1ch;
+	border: 1px solid var(--surface1);
+	border-radius: 4px;
+	background: var(--surface0);
+	color: var(--subtext1);
+	cursor: pointer;
+}
+
+.send:hover {
+	border-color: var(--mauve);
+	color: var(--text);
+}
+
+.send-cmd {
+	color: var(--mauve);
+	font-weight: 700;
+}
+
+.send-ret {
+	color: var(--overlay2);
+}
+
+body[data-conn="down"] .send {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
+/* lualine-style statusline */
+.nvim-status {
+	display: flex;
+	align-items: stretch;
+	height: 1.65em;
+	line-height: 1.65em;
+	font-size: 0.9em;
+	background: var(--surface0);
+	color: var(--subtext1);
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.nvim-status > span {
+	padding: 0 1.2ch;
+}
+
+.ns-mode {
+	font-weight: 800;
+	letter-spacing: 0.05em;
+	color: var(--crust);
+	background: var(--blue);
+	min-width: 9ch;
+	text-align: center;
+	position: relative;
+	clip-path: polygon(0 0, calc(100% - var(--arrow)) 0, 100% 50%, calc(100% - var(--arrow)) 100%, 0 100%);
+	padding-right: calc(1.2ch + var(--arrow)) !important;
+}
+
+body[data-mode="insert"] .ns-mode {
+	background: var(--green);
+}
+
+.ns-file {
+	color: var(--text);
+	background: var(--surface1);
+	margin-left: calc(var(--arrow) * -1);
+	padding-left: calc(1.2ch + var(--arrow)) !important;
+	clip-path: polygon(0 0, calc(100% - var(--arrow)) 0, 100% 50%, calc(100% - var(--arrow)) 100%, 0 100%);
+	padding-right: calc(1.2ch + var(--arrow)) !important;
+	position: relative;
+	z-index: -0;
+}
+
+.ns-mode {
+	z-index: 1;
+}
+
+.ns-mod {
+	color: var(--peach);
+	font-weight: 700;
+	padding-left: 0.5ch !important;
+}
+
+.ns-fill {
+	flex: 1;
+	padding: 0 !important;
+}
+
+.ns-enc b {
+	color: var(--overlay2);
+	font-weight: 700;
+}
+
+body[data-enc="on"] .ns-enc b {
+	color: var(--green);
+}
+
+.ns-ft {
+	color: var(--overlay1);
+}
+
+.ns-pos {
+	color: var(--crust);
+	background: var(--blue);
+	font-weight: 700;
+	min-width: 7ch;
+	text-align: center;
+	clip-path: polygon(var(--arrow) 0, 100% 0, 100% 100%, var(--arrow) 100%, 0 50%);
+	padding-left: calc(1.2ch + var(--arrow)) !important;
+}
+
+body[data-mode="insert"] .ns-pos {
+	background: var(--green);
+}
+
+.cmdline {
+	display: flex;
+	gap: 2ch;
+	align-items: center;
+	min-height: 1.75em;
+	padding: 0 1ch;
+	font-size: 0.9em;
+	color: var(--overlay1);
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.cl-mode {
+	color: var(--text);
+	font-weight: 700;
+}
+
+.cl-mode:empty {
+	display: none;
+}
+
+.cl-hint {
+	margin-left: auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.cl-hint kbd {
+	background: none;
+	padding: 0;
+}
+
+.cl-err {
+	display: none;
+	color: var(--red);
+	font-weight: 700;
+}
+
+body[data-conn="down"] .cl-err {
+	display: inline;
+}
+
+body[data-conn="down"] .cl-mode {
+	display: none;
+}
+
+/* ------------------------------------------------------------------
+ * Users pane (nicklist)
+ * ------------------------------------------------------------------ */
+
+.pane-users {
+	flex: none;
+	width: var(--usersw);
+	border-left: 1px solid var(--surface1);
+	background: var(--base);
+}
+
+.pane-users .pane-head::before {
+	width: 1ch;
+}
+
+.nicklist {
+	list-style: none;
+	margin: 0;
+	padding: 0.4em 1ch;
+	overflow-y: auto;
+	flex: 1;
+	min-height: 0;
+}
+
+.nk {
+	display: flex;
+	align-items: baseline;
+	gap: 1ch;
+	white-space: nowrap;
+	padding: 0 0.5ch;
+	border-radius: 3px;
+}
+
+.nk-dot {
+	flex: none;
+	color: var(--green);
+	font-size: 0.8em;
+}
+
+.nk-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-weight: 700;
+	min-width: 0;
+}
+
+.nk-tag {
+	flex: none;
+	color: var(--overlay1);
+	font-size: 0.88em;
+}
+
+.nk.self {
+	background: color-mix(in srgb, var(--surface0) 60%, transparent);
+}
+
+.nk.gone .nk-dot {
+	color: var(--overlay0);
+}
+
+.nk.gone .nk-name {
+	color: var(--overlay0);
+	font-weight: 400;
+	text-decoration: line-through;
+	text-decoration-color: var(--surface2);
+}
+
+.nick-foot {
+	flex: none;
+	margin: 0;
+	padding: 0.6em 1.5ch;
+	border-top: 1px solid var(--surface0);
+	color: var(--overlay1);
+	font-size: 0.86em;
+	line-height: 1.5;
+}
+
+body.users-collapsed .pane-users {
+	display: none;
+}
+
+/* ------------------------------------------------------------------
+ * tmux status line with powerline segments
+ * ------------------------------------------------------------------ */
+
+.statusbar {
+	flex: none;
+	display: flex;
+	justify-content: space-between;
+	align-items: stretch;
+	height: var(--sb-h);
+	line-height: var(--sb-h);
+	background: var(--mantle);
+	border-top: 1px solid var(--crust);
+	white-space: nowrap;
+	font-size: 0.93em;
+	padding-bottom: env(safe-area-inset-bottom);
+	box-sizing: content-box;
+}
+
+.sb-left,
+.sb-right {
+	display: flex;
+	align-items: stretch;
+	min-width: 0;
+}
+
+.sb-right {
+	flex: none;
+}
+
+.pl {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.6ch;
+	height: var(--sb-h);
+	margin: 0;
+	border: 0;
+	padding: 0 1.2ch;
+	background: var(--surface0);
+	color: var(--subtext1);
+	text-decoration: none;
+	cursor: default;
+}
+
+a.pl,
+button.pl {
+	cursor: pointer;
+}
+
+/* left side: segments point right (▶) and overlap the next one */
+.pl-r {
+	clip-path: polygon(0 0, calc(100% - var(--arrow)) 0, 100% 50%, calc(100% - var(--arrow)) 100%, 0 100%);
+	padding-right: calc(1.2ch + var(--arrow));
+}
+
+.pl-r + .pl-r {
+	margin-left: calc(var(--arrow) * -1 + 1px);
+	padding-left: calc(1.2ch + var(--arrow));
+}
+
+.sb-left > :nth-child(1) { z-index: 5; }
+.sb-left > :nth-child(2) { z-index: 4; }
+.sb-left > :nth-child(3) { z-index: 3; }
+.sb-left > :nth-child(4) { z-index: 2; }
+
+/* right side: segments point left (◀) */
+.pl-l {
+	clip-path: polygon(var(--arrow) 0, 100% 0, 100% 100%, var(--arrow) 100%, 0 50%);
+	padding-left: calc(1.2ch + var(--arrow));
+}
+
+.pl-l + .pl-l {
+	margin-left: calc(var(--arrow) * -1 + 1px);
+}
+
+.seg-session {
+	background: var(--green);
+	color: var(--crust);
+	font-weight: 800;
+}
+
+.seg-session .glyph {
+	font-weight: 400;
+}
+
+.seg-win {
+	background: var(--surface0);
+	color: var(--overlay2);
+}
+
+.seg-win.active {
+	background: var(--mauve);
+	color: var(--crust);
+	font-weight: 800;
+}
+
+a.seg-win:hover,
+button.seg-win:hover {
+	color: var(--text);
+	background: var(--surface1);
+}
+
+.seg-users {
+	background: var(--mantle);
+}
+
+.seg-users[aria-expanded="true"] {
+	color: var(--subtext1);
+	background: var(--surface0);
+}
+
+.seg-users .uc {
+	color: var(--green);
+	margin-left: 0.3ch;
+}
+
+.pl:focus-visible {
+	outline: none;
+	box-shadow: inset 0 -3px 0 var(--peach);
+	text-decoration: underline;
+	text-decoration-color: var(--peach);
+}
+
+.seg-enc {
+	background: var(--surface1);
+	color: var(--text);
+}
+
+.seg-enc:hover {
+	background: var(--surface2);
+}
+
+.seg-enc .lock {
+	width: 0.95em;
+	height: 0.95em;
+	color: var(--overlay2);
+}
+
+.seg-enc .shackle {
+	transform-origin: 11.5px 7px;
+	transform: translateX(0) rotate(0);
+	transition: transform 0.2s ease;
+}
+
+body[data-enc="off"] .seg-enc .shackle {
+	transform: translate(0, -1px) rotate(-28deg);
+	transform-origin: 4.5px 7px;
+}
+
+body[data-enc="on"] .seg-enc {
+	background: var(--yellow);
+	color: var(--crust);
+}
+
+body[data-enc="on"] .seg-enc .lock {
+	color: var(--crust);
+}
+
+.seg-conn {
+	background: var(--sapphire);
+	color: var(--crust);
+	font-weight: 700;
+}
+
+#conn-stat {
+	display: none;
+}
+
+body[data-conn="down"] .seg-conn {
+	background: var(--red);
+}
+
+body[data-conn="down"] #conn-ok {
+	display: none;
+}
+
+body[data-conn="down"] #conn-stat {
+	display: inline;
+}
+
+body[data-conn="down"] #conn-stat .dot {
+	display: inline-block;
+	animation: blink 1s steps(2, start) infinite;
+}
+
+.narrow {
+	display: none;
+}
+
+.seg-clock {
+	background: var(--lavender);
+	color: var(--crust);
+}
+
+.seg-clock .date {
+	opacity: 0.8;
+}
+
+@keyframes blink {
+	to {
+		visibility: hidden;
+	}
+}
+
+/* ------------------------------------------------------------------
+ * Floating TUI popup (key dialog) + shared fzf pieces
+ * ------------------------------------------------------------------ */
+
+dialog.float {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--text);
+	width: min(62ch, calc(100vw - 32px));
+	max-width: none;
+	overflow: visible;
+}
+
+dialog.float::backdrop {
+	background: rgba(17, 17, 27, 0.62);
+}
+
+.float-box,
+.picker-main,
+.picker-preview {
+	position: relative;
+	margin: 0;
+	border: 1px solid var(--mauve);
+	border-radius: 10px;
+	background: var(--mantle);
+	box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* title sits on the top border, like a telescope/lazy.nvim float */
+.float-title {
+	position: absolute;
+	top: 0;
+	left: 2ch;
+	transform: translateY(-50%);
+	margin: 0;
+	font-size: 1em;
+	line-height: 1.2;
+	font-weight: 700;
+}
+
+.float-title span {
+	display: inline-block;
+	padding: 0 1ch;
+	color: var(--crust);
+	background: var(--mauve);
+	border-radius: 4px;
+}
+
+.float-body {
+	padding: 1.6em 2.5ch 1.2em;
+}
+
+.float-desc {
+	margin: 0 0 0.9em;
+	color: var(--subtext1);
+}
+
+#message {
+	margin: 0 0 0.9em;
+	color: var(--red);
+	font-weight: 700;
+}
+
+#message:empty {
+	display: none;
+}
+
+#message::before {
+	content: "✗ ";
+}
+
+.fz-field {
+	display: flex;
+	align-items: center;
+	gap: 1ch;
+	padding: 0.35em 1ch;
+	border-radius: 6px;
+	background: var(--crust);
+	border: 1px solid var(--surface0);
+}
+
+.fz-field:focus-within {
+	border-color: var(--surface2);
+}
+
+.fz-prompt {
+	flex: none;
+	min-width: 6ch;
+	color: var(--mauve);
+	font-weight: 700;
+}
+
+.fz-prompt span {
+	color: var(--pink);
+}
+
+.fz-field input {
+	flex: 1;
+	min-width: 0;
+	border: 0;
+	padding: 0.15em 0;
+	background: transparent;
+	outline: none;
+	caret-color: var(--rosewater);
+}
+
+.fz-field input::placeholder {
+	color: var(--overlay0);
+}
+
+.fz-field:has(input:focus-visible) {
+	border-color: var(--peach);
+	box-shadow: 0 0 0 1px var(--peach);
+}
+
+.float-help {
+	margin: 0.8em 0 1.1em;
+	font-size: 0.9em;
+}
+
+.float-actions {
+	display: flex;
+	gap: 1.5ch;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+}
+
+.fbtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 1ch;
+	padding: 0.3em 1.6ch;
+	border-radius: 6px;
+	border: 1px solid var(--surface1);
+	background: var(--surface0);
+	color: var(--subtext1);
+	cursor: pointer;
+}
+
+.fbtn:hover {
+	border-color: var(--overlay0);
+	color: var(--text);
+}
+
+.fbtn kbd {
+	background: var(--crust);
+	color: var(--overlay2);
+	font-size: 0.85em;
+}
+
+.fbtn.primary {
+	background: var(--mauve);
+	border-color: var(--mauve);
+	color: var(--crust);
+	font-weight: 700;
+}
+
+.fbtn.primary:hover {
+	background: var(--pink);
+	border-color: var(--pink);
+	color: var(--crust);
+}
+
+.fbtn.primary kbd {
+	background: rgba(17, 17, 27, 0.2);
+	color: var(--crust);
+}
+
+.float-foot {
+	position: absolute;
+	right: 2ch;
+	bottom: 0;
+	transform: translateY(50%);
+	margin: 0;
+	font-size: 0.85em;
+	line-height: 1.2;
+}
+
+.float-foot span {
+	padding: 0 1ch;
+	background: var(--mantle);
+	color: var(--overlay1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	dialog.float[open] {
+		animation: pop 0.14s ease-out;
+	}
+
+	@keyframes pop {
+		from {
+			opacity: 0;
+			transform: translateY(6px) scale(0.985);
+		}
+	}
+}
+
+/* ------------------------------------------------------------------
+ * Home: shell pane + fzf-style new-session picker
+ * ------------------------------------------------------------------ */
+
+.pane-home {
+	overflow: hidden;
+}
+
+.shell {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	padding: 1em 2ch 2em;
+}
+
+.sh-line {
+	flex: none;
+	margin: 0 0 1.2em;
+	color: var(--text);
+}
+
+.sh-p {
+	color: var(--blue);
+	font-weight: 700;
+}
+
+.sh-arrow {
+	color: var(--green);
+	font-weight: 700;
+}
+
+.big-logo {
+	font-size: clamp(1.6em, 5vw, 2.6em);
+	width: max-content;
+	margin: auto auto 0;
+}
+
+.tagline {
+	text-align: center;
+	color: var(--subtext0);
+	margin: 0.6em 0 2.2em;
+}
+
+.picker {
+	display: grid;
+	grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+	gap: 2.5ch;
+	width: 100%;
+	max-width: 110ch;
+	margin: 0 auto auto;
+}
+
+.picker-main,
+.picker-preview {
+	padding: 1.7em 2.5ch 1.3em;
+}
+
+.picker-main {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75em;
+}
+
+.picker-preview {
+	border-color: var(--surface1);
+	box-shadow: none;
+	background: var(--base);
+}
+
+.picker-preview .float-title span {
+	background: var(--surface1);
+	color: var(--text);
+}
+
+.fz-hash {
+	color: var(--overlay1);
+	margin-right: -1ch;
+}
+
+.fz-session {
+	display: flex;
+	gap: 1ch;
+	align-items: center;
+	padding: 0.35em 1ch;
+	color: var(--subtext1);
+}
+
+.ok-dot {
+	color: var(--green);
+}
+
+.hl-name {
+	color: var(--rosewater);
+}
+
+.fz-sep {
+	display: flex;
+	align-items: center;
+	gap: 1ch;
+	color: var(--overlay1);
+	font-size: 0.9em;
+}
+
+.fz-sep::before {
+	content: "";
+	flex: 1;
+	border-top: 1px solid var(--surface1);
+}
+
+.fz-count {
+	color: var(--yellow);
+}
+
+.fz-error {
+	margin: 0;
+	padding: 0.4em 1ch;
+	border-left: 2px solid var(--red);
+	background: color-mix(in srgb, var(--red) 12%, transparent);
+	color: var(--red);
+	border-radius: 0 4px 4px 0;
+}
+
+.fz-item {
+	display: flex;
+	align-items: center;
+	gap: 1ch;
+	width: 100%;
+	padding: 0.45em 1ch 0.45em 0;
+	border: 0;
+	border-radius: 4px;
+	background: var(--surface0);
+	text-align: left;
+	cursor: pointer;
+}
+
+.fz-item:hover {
+	background: var(--surface1);
+}
+
+.fz-cursor {
+	color: var(--mauve);
+	font-weight: 700;
+}
+
+.fz-act {
+	color: var(--text);
+	font-weight: 700;
+}
+
+.fz-target {
+	flex: 1;
+	min-width: 0;
+	color: var(--pink);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.fz-key {
+	color: var(--overlay2);
+	background: var(--crust);
+}
+
+.fz-item:focus-visible {
+	outline-offset: 1px;
+}
+
+.fz-help {
+	margin: 0;
+	font-size: 0.88em;
+}
+
+.pv-cmd {
+	margin: 0 0 1em;
+	color: var(--text);
+	overflow-wrap: anywhere;
+}
+
+#pv-win {
+	color: var(--yellow);
+}
+
+.pv-list {
+	display: grid;
+	grid-template-columns: 8ch minmax(0, 1fr);
+	gap: 0.25em 1ch;
+	margin: 0;
+}
+
+.pv-list dt {
+	color: var(--overlay1);
+}
+
+.pv-list dd {
+	margin: 0;
+	color: var(--subtext1);
+	overflow-wrap: anywhere;
+}
+
+#pv-nick {
+	color: var(--rosewater);
+	font-weight: 700;
+}
+
+#pv-room {
+	color: var(--mauve);
+	font-weight: 700;
+}
+
+#pv-ws {
+	color: var(--teal);
+}
+
+/* ------------------------------------------------------------------
+ * Narrow screens
+ * ------------------------------------------------------------------ */
+
+@media (max-width: 760px) {
+	:root {
+		--fs: 13px;
+		--nickw: 8ch;
+		--arrow: 0.6em;
+	}
+
+	.ph-topic,
+	.ph-who {
+		display: none;
+	}
+
+	.motd {
+		padding-left: 1ch;
+		gap: 2ch;
+	}
+
+	.line {
+		grid-template-columns: 5ch var(--nickw) minmax(0, 1fr);
+		column-gap: 0.8ch;
+		padding: 0;
+	}
+
+	.gutter {
+		width: 3ch;
+	}
+
+	.gnum {
+		display: none;
+	}
+
+	.ns-ft,
+	.ns-file {
+		display: none;
+	}
+
+	.cl-hint {
+		display: none;
+	}
+
+	/* nicklist becomes a floating pane toggled from the status line */
+	.pane-users {
+		display: none;
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: min(28ch, 78vw);
+		z-index: 20;
+		background: var(--mantle);
+		box-shadow: -12px 0 30px rgba(0, 0, 0, 0.45);
+		--pane-accent: var(--mauve);
+	}
+
+	body.users-open .pane-users {
+		display: flex;
+	}
+
+	body.users-collapsed .pane-users {
+		display: none;
+	}
+
+	body.users-open.users-collapsed .pane-users {
+		display: flex;
+	}
+
+	.seg-win[href] {
+		display: none;
+	}
+
+	.pl {
+		padding: 0 0.9ch;
+	}
+
+	.pl-r {
+		padding-right: calc(0.9ch + var(--arrow));
+	}
+
+	.pl-r + .pl-r {
+		padding-left: calc(0.9ch + var(--arrow));
+	}
+
+	.pl-l {
+		padding-left: calc(0.9ch + var(--arrow));
+	}
+
+	.seg-session .glyph,
+	.wide {
+		display: none;
+	}
+
+	.narrow {
+		display: inline;
+	}
+
+	/* visually hidden on phones, still announced */
+	.sr-narrow {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+	}
+
+	.picker {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2em;
+	}
+
+	.shell {
+		padding: 0.8em 16px 2em;
+	}
+
+	.tagline {
+		margin-bottom: 2em;
+		font-size: 0.92em;
+	}
+}
+
+@media (max-width: 400px) {
+	.seg-users {
+		letter-spacing: -0.02em;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+		transition: none !important;
+		scroll-behavior: auto !important;
+	}
+}

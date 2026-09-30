@@ -1,55 +1,116 @@
 {{ define "chat" }}
 	<!DOCTYPE html>
-	<html>
+	<html lang="en">
 	<head>
-			<title>MsgKas: {{ .RoomID }}</title>
-			<meta name="viewport" content="width=device-width, initial-scale=1">
-			<!-- For use in IRAN behind GFW -->
-			<!-- <script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js" ></script> -->
-			<!-- <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> -->
-			<script src="/static/tailwind4.1.10.global.js" ></script>
+		<meta charset="utf-8">
+		<title>1:#{{ .RoomID }} — emsg</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+		<meta name="color-scheme" content="dark">
+		<meta name="theme-color" content="#11111b">
+		<link rel="stylesheet" href="/static/terminal-tmux.css">
 	</head>
-	<body class="bg-gray-950 text-white min-h-screen p-1 xl:p-6" >
-		<div id="messages" class="flex flex-col overflow-auto pb-36">
-			<div class="text-slate-300 text-2xl p-4 text-center">Welcome to {{ .RoomID }} </div>
+	<body class="tmux chat" data-conn="down" data-enc="off" data-mode="normal">
+		<div class="workspace">
+			<!-- pane 0: weechat-style buffer + neovim composer -->
+			<section class="pane pane-chat" aria-label="Chat #{{ .RoomID }}">
+				<header class="pane-head">
+					<span class="ph-idx">0</span>
+					<span class="ph-title">#{{ .RoomID }}</span>
+					<span class="ph-topic">live relay · nothing is stored</span>
+					<span class="ph-fill" aria-hidden="true"></span>
+					<span class="ph-who"><span data-uname>{{ .Username }}</span>@emsg</span>
+				</header>
+
+				<main id="messages" class="buffer" aria-live="polite" aria-label="Messages in #{{ .RoomID }}">
+					<div class="motd" aria-label="Welcome">
+<pre class="logo" aria-hidden="true">┌─┐┌┬┐┌─┐┌─┐
+├┤ │││└─┐│ ┬
+└─┘┴ ┴└─┘└─┘</pre>
+						<div class="motd-side">
+							<p class="motd-name">emsg <span class="dim">·</span> <span class="ver">kaskade relay</span></p>
+							<p class="dim">buffer <span class="hl">1:#{{ .RoomID }}</span> opened for <span class="self-name" data-uname>{{ .Username }}</span></p>
+						</div>
+					</div>
+					<div class="line sys info"><span class="ts">--:--</span><span class="nick"><span class="pfx">--</span></span><span class="text">Welcome to <span class="hl">#{{ .RoomID }}</span>. Messages are relayed live to everyone here; nothing is stored.</span></div>
+					<div class="line sys info"><span class="ts">--:--</span><span class="nick"><span class="pfx">--</span></span><span class="text">Set a shared key with <kbd>e</kbd> (or the <span class="hl">enc</span> segment below) to end-to-end encrypt. Press <kbd>i</kbd> to start typing.</span></div>
+				</main>
+
+				<footer class="composer">
+					<form id="msgform" autocomplete="off">
+						<label for="msgbox" class="gutter" aria-hidden="true"><span class="gnum">1</span><span class="gbar"></span></label>
+						<textarea id="msgbox" rows="1" placeholder="message #{{ .RoomID }}" spellcheck="false" aria-label="Message" aria-describedby="keyhint"></textarea>
+						<button type="submit" class="send" title="Send (Enter)"><span class="send-cmd">:w</span><span class="send-ret" aria-hidden="true">⏎</span><span class="sr-only"> send</span></button>
+					</form>
+					<div class="nvim-status" aria-hidden="true">
+						<span class="ns-mode" id="mode">NORMAL</span>
+						<span class="ns-file">msg://#{{ .RoomID }}</span>
+						<span class="ns-mod" id="modflag"></span>
+						<span class="ns-fill"></span>
+						<span class="ns-enc">enc:<b id="ns-enc">off</b></span>
+						<span class="ns-ft">utf-8</span>
+						<span class="ns-pos" id="caret">1:1</span>
+					</div>
+					<div class="cmdline">
+						<span class="cl-mode" id="cmdmode" aria-hidden="true"></span>
+						<span class="cl-err" aria-hidden="true">E: relay unreachable — retrying…</span>
+						<span class="cl-hint" id="keyhint"><kbd>Enter</kbd> send · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> newline · <kbd>Esc</kbd> normal</span>
+					</div>
+				</footer>
+			</section>
+
+			<!-- pane 1: nicklist -->
+			<aside class="pane pane-users" id="users-pane" aria-label="Users in this session">
+				<header class="pane-head">
+					<span class="ph-idx">1</span>
+					<span class="ph-title">users</span>
+					<span class="ph-fill" aria-hidden="true"></span>
+					<span class="ph-count" id="users-count">1</span>
+				</header>
+				<ul class="nicklist" id="nicklist"></ul>
+				<p class="nick-foot">seen this session<br><span class="dim">● here &nbsp; ○ left</span></p>
+			</aside>
 		</div>
 
-		<button class="fixed top-3 right-3 p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors duration-200" command="show-modal" commandfor="encKeyDia" title="Encryption key">
-			<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.4 2.7a2.5 2.5 0 0 1 3.4 0l5.5 5.5a2.5 2.5 0 0 1 0 3.4l-3.7 3.7a2.5 2.5 0 0 1-3.4 0L8.7 9.8a2.5 2.5 0 0 1 0-3.4z"/><path d="m14 7 3 3"/><path d="m9.4 10.6-6.814 6.814A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814"/></svg>
-		</button>
+		<!-- tmux status line -->
+		<nav class="statusbar" aria-label="Status">
+			<div class="sb-left">
+				<span class="pl pl-r seg-session" title="tmux session"><span class="glyph" aria-hidden="true">❐</span> emsg</span>
+				<a class="pl pl-r seg-win" href="/" title="Leave room (back to new-session)">0:home</a>
+				<span class="pl pl-r seg-win active" aria-current="page">1:#{{ .RoomID }}*</span>
+				<button type="button" class="pl pl-r seg-win seg-users" id="users-toggle" aria-controls="users-pane" aria-expanded="true" title="Toggle users pane">2:users<span class="uc">(<span id="users-count-sb">1</span>)</span></button>
+			</div>
+			<div class="sb-right">
+				<button id="enc-btn" class="pl pl-l seg-enc" type="button" command="show-modal" commandfor="encKeyDia" title="Set encryption key (e)" aria-haspopup="dialog">
+					<svg class="lock" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true"><path class="shackle" d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="2.5" y="7" width="11" height="8" rx="1.5" fill="currentColor"/></svg>
+					<span><span class="sr-narrow">enc:</span><b class="enc-state" id="enc-state">off</b></span>
+				</button>
+				<span class="pl pl-l seg-conn" role="status" aria-live="polite">
+					<span id="conn-ok"><span class="dot" aria-hidden="true">●</span><span class="sr-narrow"> online</span></span>
+					<span id="conn-stat"><span class="dot" aria-hidden="true">✗</span> <span class="wide">reconnecting…</span><span class="narrow">down</span></span>
+				</span>
+				<span class="pl pl-l seg-clock"><span class="wide date" id="date"></span> <b id="clock">--:--</b></span>
+			</div>
+		</nav>
 
-		<dialog id="encKeyDia" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm rounded-xl bg-gray-900 border border-gray-800 text-white shadow-xl p-0 backdrop:bg-black/60">
-			<form class="flex flex-col gap-4 p-6">
-				<div class="flex flex-col gap-1">
-					<h3 class="text-base font-semibold text-white">Encryption key required</h3>
-					<p id="message" class="text-sm text-gray-400"></p>
+		<dialog id="encKeyDia" class="float" aria-labelledby="enc-title">
+			<form method="dialog" class="float-box">
+				<h2 class="float-title" id="enc-title"><span>Encryption key</span></h2>
+				<div class="float-body">
+					<p class="float-desc">Everyone in <span class="hl">#{{ .RoomID }}</span> must use the same key. Leave it empty to send plain text.</p>
+					<p id="message" role="alert"></p>
+					<div class="fz-field">
+						<label for="enckey" class="fz-prompt">key <span aria-hidden="true">❯</span></label>
+						<input id="enckey" type="password" autocomplete="off" spellcheck="false" placeholder="shared secret">
+					</div>
+					<p class="float-help dim">The key stays in this tab. It is never sent to the relay.</p>
+					<div class="float-actions">
+						<button class="fbtn primary" id="confirmBtn" value="confirm" formmethod="dialog">confirm <kbd>⏎</kbd></button>
+						<button class="fbtn" value="cancel" formmethod="dialog" formnovalidate>cancel <kbd>esc</kbd></button>
+					</div>
 				</div>
-				<div class="flex flex-col gap-1.5">
-					<label for="enckey" class="text-xs font-medium text-gray-400 uppercase tracking-wide">Key</label>
-					<input id="enckey" type="password" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-gray-500 transition-colors duration-200" placeholder="Enter encryption key">
-				</div>
-				<div class="flex gap-2 justify-end">
-					<button value="cancel" formmethod="dialog" class="px-4 py-2 text-sm rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors duration-200">Cancel</button>
-					<button id="confirmBtn" formmethod="dialog" value="confirm" class="px-4 py-2 text-sm rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200">Confirm</button>
-				</div>
+				<p class="float-foot" aria-hidden="true"><span>AES · kasenc</span></p>
 			</form>
 		</dialog>
-
-		<div class="fixed bottom-4 md:bottom-10 left-2 md:left-10 right-2 md:right-10">
-			<div id="conn-stat" class="absolute bottom-full right-0 mb-1 px-2 py-0.5 rounded text-xs bg-gray-800 text-gray-400">Connecting...</div>
-			<form
-				id="msgform"
-				onsubmit="handleSubmit(event)"
-				class="flex items-end rounded-xl overflow-hidden bg-gray-900 border border-gray-800">
-				<textarea
-					onkeydown="handleKeyPressEvent(event)"
-					class="grow bg-transparent px-4 py-3 text-sm text-white placeholder-gray-600 resize-none outline-none max-h-40"
-					placeholder="Type a message..."
-					rows="1"
-					id="msgbox"></textarea>
-				<button type="submit" class="shrink-0 px-4 py-3 text-sm text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer">Send</button>
-			</form>
-		</div>
 
 		<script>
 			window.chatdata = {
@@ -59,7 +120,7 @@
 			}
 		</script>
 		<script src="/static/wasm_exec.js"></script>
-		<script src="/static/index.js" ></script>
+		<script src="/static/index.js"></script>
 	</body>
 	</html>
 {{ end }}

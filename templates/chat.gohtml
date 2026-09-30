@@ -1,55 +1,94 @@
 {{ define "chat" }}
 	<!DOCTYPE html>
-	<html>
+	<html lang="en">
 	<head>
-			<title>MsgKas: {{ .RoomID }}</title>
-			<meta name="viewport" content="width=device-width, initial-scale=1">
-			<!-- For use in IRAN behind GFW -->
-			<!-- <script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js" ></script> -->
-			<!-- <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> -->
-			<script src="/static/tailwind4.1.10.global.js" ></script>
+		<meta charset="utf-8">
+		<title>#{{ .RoomID }} &middot; EMSG VT220</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+		<meta name="color-scheme" content="dark">
+		<meta name="theme-color" content="#0a0704">
+		<link rel="stylesheet" href="/static/terminal-amber.css">
 	</head>
-	<body class="bg-gray-950 text-white min-h-screen p-1 xl:p-6" >
-		<div id="messages" class="flex flex-col overflow-auto pb-36">
-			<div class="text-slate-300 text-2xl p-4 text-center">Welcome to {{ .RoomID }} </div>
+	<body class="chat" data-conn="connecting" data-enc="off">
+		<div class="vt">
+			<div class="bezel">
+				<div class="screen">
+					<div class="scr">
+						<header class="topline">
+							<span class="dw" style="--n:4"><span>EMSG</span></span>
+							<span class="room">CH <b>#{{ .RoomID }}</b></span>
+							<button id="enc-btn" class="key" type="button" command="show-modal" commandfor="encKeyDia" title="Set-Up A: encryption key (F3)" aria-haspopup="dialog"><kbd>F3</kbd>SET-UP</button>
+						</header>
+
+						<section class="panel log" aria-labelledby="log-title">
+							<h1 class="panel-title" id="log-title">#{{ .RoomID }}</h1>
+							<p class="panel-note" aria-hidden="true">LIVE &middot; NOT STORED</p>
+							<main id="messages" aria-live="polite" aria-label="Messages in #{{ .RoomID }}">
+								<section class="motd" aria-label="Welcome">
+									<p class="title">EMSG RELAY TERMINAL &middot; CHANNEL #{{ .RoomID }}</p>
+									<p class="row"><span>OPERATOR</span><span class="lead"></span><span class="bright" data-uname>{{ .Username }}</span></p>
+									<p class="row"><span>STORAGE</span><span class="lead"></span><span>NONE &mdash; LIVE RELAY ONLY</span></p>
+									<p class="row"><span>ENCRYPTION</span><span class="lead"></span><span>SET-UP A &nbsp;[F3]</span></p>
+									<p class="row keys"><span>KEYS</span><span class="lead"></span><span>RETURN SEND &middot; CTRL+RETURN NEW LINE</span></p>
+									<p class="ready">READY.</p>
+								</section>
+							</main>
+						</section>
+
+						<form id="msgform" class="panel composer" autocomplete="off">
+							<p class="panel-title" aria-hidden="true">TRANSMIT</p>
+							<p class="panel-note offline" aria-hidden="true"><span class="when-down">&#9618; OFF LINE &middot; RETRYING &#9618;</span><span class="when-connecting">CONNECTING&hellip;</span></p>
+							<p class="panel-note bottom keys-note" aria-hidden="true">RETURN=SEND &nbsp;CTRL+RETURN=NEW LINE</p>
+							<div class="cmd">
+								<label for="msgbox" class="ps"><span data-uname>{{ .Username }}</span>&gt;</label>
+								<div class="input-wrap">
+									<textarea id="msgbox" rows="1" spellcheck="false" aria-label="Message"></textarea>
+									<div class="mirror" id="msgmirror" aria-hidden="true"></div>
+								</div>
+								<button type="submit" class="key send" title="Send (Return)"><span class="lbl">SEND</span> &#8629;</button>
+							</div>
+						</form>
+
+						<footer class="statusline">
+							<span class="st-ver" aria-hidden="true">EMSG V1.0</span>
+							<span class="st-room" aria-hidden="true">#{{ .RoomID }}</span>
+							<span class="st-user" aria-hidden="true" data-uname>{{ .Username }}</span>
+							<span class="grow"></span>
+							<span class="st-enc">ENC:<span id="enc-state">OFF</span></span>
+							<span class="st-clock" id="clock" aria-hidden="true">--:--</span>
+							<span class="st-state" id="conn-stat" role="status" aria-live="polite">CONNECTING</span>
+						</footer>
+					</div>
+				</div>
+			</div>
+			<div class="case-foot" aria-hidden="true">
+				<span class="badge"><i>emsg</i><span class="model">VIDEO TERMINAL</span></span>
+				<span class="grille"></span>
+				<span class="led conn">ON LINE</span>
+				<span class="led on">POWER</span>
+			</div>
 		</div>
 
-		<button class="fixed top-3 right-3 p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors duration-200" command="show-modal" commandfor="encKeyDia" title="Encryption key">
-			<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.4 2.7a2.5 2.5 0 0 1 3.4 0l5.5 5.5a2.5 2.5 0 0 1 0 3.4l-3.7 3.7a2.5 2.5 0 0 1-3.4 0L8.7 9.8a2.5 2.5 0 0 1 0-3.4z"/><path d="m14 7 3 3"/><path d="m9.4 10.6-6.814 6.814A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814"/></svg>
-		</button>
-
-		<dialog id="encKeyDia" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm rounded-xl bg-gray-900 border border-gray-800 text-white shadow-xl p-0 backdrop:bg-black/60">
-			<form class="flex flex-col gap-4 p-6">
-				<div class="flex flex-col gap-1">
-					<h3 class="text-base font-semibold text-white">Encryption key required</h3>
-					<p id="message" class="text-sm text-gray-400"></p>
+		<dialog id="encKeyDia" aria-labelledby="enc-title">
+			<form method="dialog">
+				<h2 class="su-head" id="enc-title"><span>SET-UP A: ENCRYPTION KEY</span><span aria-hidden="true">VT220</span></h2>
+				<p class="su-dir" aria-hidden="true"><span>DISPLAY</span><span>GENERAL</span><span>COMM</span><span class="on">ENC KEY</span></p>
+				<div class="su-body">
+					<p>Shared secret for <span class="bright">#{{ .RoomID }}</span>. Every station on the channel must use the identical key. Leave blank to transmit in clear text.</p>
+					<p id="message" role="alert"></p>
+					<div class="field">
+						<label for="enckey">Key</label>
+						<span class="input"><input id="enckey" type="password" autocomplete="off" spellcheck="false" placeholder="shared secret"></span>
+					</div>
+					<p class="help">KEY IS HELD IN TERMINAL MEMORY ONLY. NEVER TRANSMITTED.</p>
 				</div>
-				<div class="flex flex-col gap-1.5">
-					<label for="enckey" class="text-xs font-medium text-gray-400 uppercase tracking-wide">Key</label>
-					<input id="enckey" type="password" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-gray-500 transition-colors duration-200" placeholder="Enter encryption key">
-				</div>
-				<div class="flex gap-2 justify-end">
-					<button value="cancel" formmethod="dialog" class="px-4 py-2 text-sm rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors duration-200">Cancel</button>
-					<button id="confirmBtn" formmethod="dialog" value="confirm" class="px-4 py-2 text-sm rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200">Confirm</button>
+				<div class="su-actions">
+					<button class="key" id="confirmBtn" value="confirm" formmethod="dialog"><kbd>RETURN</kbd>DONE</button>
+					<button class="key" value="cancel" formmethod="dialog" formnovalidate><kbd>ESC</kbd>CANCEL</button>
+					<span class="hint" aria-hidden="true">TO EXIT PRESS SET-UP</span>
 				</div>
 			</form>
 		</dialog>
-
-		<div class="fixed bottom-4 md:bottom-10 left-2 md:left-10 right-2 md:right-10">
-			<div id="conn-stat" class="absolute bottom-full right-0 mb-1 px-2 py-0.5 rounded text-xs bg-gray-800 text-gray-400">Connecting...</div>
-			<form
-				id="msgform"
-				onsubmit="handleSubmit(event)"
-				class="flex items-end rounded-xl overflow-hidden bg-gray-900 border border-gray-800">
-				<textarea
-					onkeydown="handleKeyPressEvent(event)"
-					class="grow bg-transparent px-4 py-3 text-sm text-white placeholder-gray-600 resize-none outline-none max-h-40"
-					placeholder="Type a message..."
-					rows="1"
-					id="msgbox"></textarea>
-				<button type="submit" class="shrink-0 px-4 py-3 text-sm text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer">Send</button>
-			</form>
-		</div>
 
 		<script>
 			window.chatdata = {
@@ -59,7 +98,7 @@
 			}
 		</script>
 		<script src="/static/wasm_exec.js"></script>
-		<script src="/static/index.js" ></script>
+		<script src="/static/index.js"></script>
 	</body>
 	</html>
 {{ end }}

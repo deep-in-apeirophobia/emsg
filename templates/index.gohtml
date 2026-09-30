@@ -1,51 +1,92 @@
 {{ define "home_logged_in" }}
-	<div>
-		Logged in as {{ .Username }} ({{ .UserID }})
+	<div class="session">
+		<p class="row"><span>SESSION</span><span class="lead"></span><span class="bright">RESUMED</span></p>
+		<p class="row"><span>OPERATOR</span><span class="lead"></span><span><span class="bright" data-uname>{{ .Username }}</span> <span class="dim">({{ slice .UserID 0 7 }}&hellip;)</span></span></p>
 	</div>
 {{ end }}
 {{ define "home_login" }}
-	<div class="flex gap-2 flex-col">
-		<label for="username">
-			Username
-		</label>
-		<input name="username" class="bg-sky-300/10 hover:bg-sky-300/20
-		transition-all duration-300 rounded-md p-2"></input>
+	<div class="field">
+		<label for="username">Username</label>
+		<span class="input"><input id="username" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="your handle" required autofocus></span>
 	</div>
 {{ end }}
 {{ define "home" }}
 	<!DOCTYPE html>
-	<html>
+	<html lang="en">
 	<head>
-			<title>Message Kaskade</title>
-			<!-- <script src="https://gitcdn.ir/library/jquery/3.5.1/jquery-3.5.1.min.js"></script> -->
-			<meta name="viewport" content="width=device-width, initial-scale=1">
-			<!-- <script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js"></script> -->
-			<script src="/static/tailwind4.1.10.global.js" ></script>
-			<script src="/static/jquery3.5.1.min.js" ></script>
+		<meta charset="utf-8">
+		<title>EMSG VT220 &middot; sign on</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+		<meta name="color-scheme" content="dark">
+		<meta name="theme-color" content="#0a0704">
+		<link rel="stylesheet" href="/static/terminal-amber.css">
 	</head>
-	<body class="flex items-center justify-center py-4 px-2 min-h-screen bg-gray-950 text-white">
-		<form method="post" to="/login" class="w-full max-w-md rounded-sm bg-blue-600/10 rounded-md bg-clip-padding backdrop-filter backdrop-blur-2xl bg-opacity-10 border border-gray-100 flex flex-col gap-2 p-4 mx-auto"> 
-			{{if .IsLoggedIn}}
-				{{ template "home_logged_in" . }}
-			{{else}}
-				{{ template "home_login" }}
-			{{end}}
-			<div class="flex gap-2 flex-col">
-				<label for="roomid">
-					Room ID
-				</label>
-				<input name="roomid" class="bg-sky-300/10 hover:bg-sky-300/20
-				transition-all duration-300 rounded-md p-2" value="{{ .RoomID }}"></div>
+	<body class="home">
+		<div class="vt">
+			<div class="bezel">
+				<div class="screen">
+					<main class="scr">
+						<div class="post" aria-hidden="true">
+							<p class="vtok stage" style="--i:0">VT220 OK</p>
+							<p class="ident stage" style="--i:1">EMSG RELAY TERMINAL &nbsp;V1.0<span class="long"> &nbsp;&middot;&nbsp; KASKADE LINK</span></p>
+							<p class="row stage" style="--i:2"><span>ROM CHECKSUM</span><span class="lead"></span><span class="ok">OK</span></p>
+							<p class="row stage" style="--i:3"><span>MEMORY TEST <span class="mem"></span>K</span><span class="lead"></span><span class="ok">OK</span></p>
+							<p class="row stage" style="--i:4"><span>KASENC CIPHER MODULE</span><span class="lead"></span><span class="ok">OK</span></p>
+							<p class="row stage" style="--i:5"><span>KEYBOARD</span><span class="lead"></span><span class="ok">OK</span></p>
+							<p class="row stage" style="--i:6"><span>COMM PORT /WS</span><span class="lead"></span><span class="ok">READY</span></p>
+						</div>
+
+						<form method="post" action="/" class="signon panel stage" style="--i:7">
+							<h1 class="panel-title">SIGN ON</h1>
+							<p class="panel-note">TTY1</p>
+							<p class="issue">{{if .IsLoggedIn}}Welcome back. Select a channel to go on line.{{else}}Identify yourself and select a channel.{{end}}</p>
+							{{if .IsLoggedIn}}
+								{{ template "home_logged_in" . }}
+							{{else}}
+								{{ template "home_login" }}
+							{{end}}
+							<div class="field">
+								<label for="roomid">Channel</label>
+								<span class="input"><span class="pre" aria-hidden="true">#</span><input id="roomid" name="roomid" value="{{ .RoomID }}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="lobby" {{if .IsLoggedIn}}autofocus{{end}}></span>
+							</div>
+
+							{{ if .Error }}
+								<p class="err" role="alert">?LOGIN INCORRECT &mdash; {{ .ErrorMessage }}</p>
+							{{ end }}
+
+							<div class="actions">
+								<button type="submit" class="key"><kbd>RETURN</kbd>{{if .IsLoggedIn}}GO ON LINE{{else}}SIGN ON{{end}}</button>
+								<span class="hint" aria-hidden="true">READY<span class="cur-block"></span></span>
+							</div>
+						</form>
+
+						<div class="spacer"></div>
+						<div class="statusline" aria-hidden="true">
+							<span class="st-ver">EMSG V1.0</span>
+							<span>SIGN-ON</span>
+							<span class="grow"></span>
+							<span>ENC:--</span>
+							<span class="st-state">LOCAL</span>
+						</div>
+					</main>
+				</div>
 			</div>
-			
-			{{ if .Error }}
-				<p class="text-red-400">
-					{{ .ErrorMessage }}
-				</p>
-			{{ end }}
-			<button type="submit" 
-				class="p-2 hover:bg-sky-500/20 transition-all duration-300 rounded-lg cursor-pointer">Enter</button>
-		</form>
+			<div class="case-foot" aria-hidden="true">
+				<span class="badge"><i>emsg</i><span class="model">VIDEO TERMINAL</span></span>
+				<span class="grille"></span>
+				<span class="led on">POWER</span>
+			</div>
+		</div>
+		<script>
+			// Stored usernames are HTML-escaped server-side; decode once for display.
+			(function () {
+				var t = document.createElement("textarea");
+				document.querySelectorAll("[data-uname]").forEach(function (n) {
+					t.innerHTML = n.textContent;
+					n.textContent = t.value;
+				});
+			})();
+		</script>
 	</body>
 	</html>
 {{ end }}

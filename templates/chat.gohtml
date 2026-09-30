@@ -1,65 +1,106 @@
 {{ define "chat" }}
-	<!DOCTYPE html>
-	<html>
-	<head>
-			<title>MsgKas: {{ .RoomID }}</title>
-			<meta name="viewport" content="width=device-width, initial-scale=1">
-			<!-- For use in IRAN behind GFW -->
-			<!-- <script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js" ></script> -->
-			<!-- <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> -->
-			<script src="/static/tailwind4.1.10.global.js" ></script>
-	</head>
-	<body class="bg-gray-950 text-white min-h-screen p-1 xl:p-6" >
-		<div id="messages" class="flex flex-col overflow-auto pb-36">
-			<div class="text-slate-300 text-2xl p-4 text-center">Welcome to {{ .RoomID }} </div>
-		</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+	<meta name="color-scheme" content="light">
+	<title>#{{ .RoomID }} · EMSG</title>
+	<link rel="stylesheet" href="/static/brutalist.css">
+</head>
+<body class="page-chat">
+	<div class="app" id="app">
+		<header class="roombar">
+			<a class="roombar__brand" href="/" title="Back to start">EMSG</a>
+			<div class="roombar__room">
+				<span class="roombar__kicker">Room</span>
+				<h1 class="roombar__name" title="{{ .RoomID }}"><span aria-hidden="true">#</span>{{ .RoomID }}</h1>
+			</div>
+			<div class="roombar__me" id="me-chip" title="You">
+				<span class="roombar__me-label">You</span>
+				<span class="nametag" id="me-name"></span>
+			</div>
+			<button type="button" class="btn btn--white keybtn" id="keybtn" command="show-modal" commandfor="encKeyDia" title="Set encryption key" aria-haspopup="dialog">
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8"/><path d="m16 7 3 3"/><path d="m18.5 4.5 2 2"/></svg>
+				<span class="keybtn__state" id="key-state">No key</span>
+			</button>
+		</header>
 
-		<button class="fixed top-3 right-3 p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors duration-200" command="show-modal" commandfor="encKeyDia" title="Encryption key">
-			<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.4 2.7a2.5 2.5 0 0 1 3.4 0l5.5 5.5a2.5 2.5 0 0 1 0 3.4l-3.7 3.7a2.5 2.5 0 0 1-3.4 0L8.7 9.8a2.5 2.5 0 0 1 0-3.4z"/><path d="m14 7 3 3"/><path d="m9.4 10.6-6.814 6.814A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814"/></svg>
-		</button>
+		<main class="feed" id="messages" aria-live="polite" aria-label="Messages">
+			<section class="welcome card">
+				<div class="card__bar card__bar--violet">
+					<span class="card__bar-title">Welcome to #{{ .RoomID }}</span>
+					<span class="card__bar-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+				</div>
+				<div class="card__body welcome__body">
+					<p class="welcome__lead">You're in. Only messages sent while you're connected show up here.</p>
+					<ul class="welcome__tips">
+						<li><kbd>Enter</kbd><span>send message</span></li>
+						<li><kbd>Ctrl</kbd><b>+</b><kbd>Enter</kbd><span>new line</span></li>
+						<li><kbd class="kbd--icon" aria-label="Key button"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8"/><path d="m16 7 3 3"/></svg></kbd><span>share a key to encrypt</span></li>
+					</ul>
+				</div>
+			</section>
+		</main>
 
-		<dialog id="encKeyDia" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm rounded-xl bg-gray-900 border border-gray-800 text-white shadow-xl p-0 backdrop:bg-black/60">
-			<form class="flex flex-col gap-4 p-6">
-				<div class="flex flex-col gap-1">
-					<h3 class="text-base font-semibold text-white">Encryption key required</h3>
-					<p id="message" class="text-sm text-gray-400"></p>
+		<footer class="dock">
+			<div id="conn-stat" class="connstat" role="status">
+				<span class="connstat__blink" aria-hidden="true"></span>
+				<span class="connstat__text">Connecting...</span>
+			</div>
+			<form id="msgform" class="composer" autocomplete="off">
+				<label class="sr-only" for="msgbox">Message</label>
+				<div class="composer__box">
+					<span class="composer__lock" id="composer-lock" hidden title="Messages will be encrypted">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+					</span>
+					<textarea id="msgbox" class="composer__input" rows="1" placeholder="Type a message..." enterkeyhint="send"></textarea>
 				</div>
-				<div class="flex flex-col gap-1.5">
-					<label for="enckey" class="text-xs font-medium text-gray-400 uppercase tracking-wide">Key</label>
-					<input id="enckey" type="password" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-gray-500 transition-colors duration-200" placeholder="Enter encryption key">
-				</div>
-				<div class="flex gap-2 justify-end">
-					<button value="cancel" formmethod="dialog" class="px-4 py-2 text-sm rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors duration-200">Cancel</button>
-					<button id="confirmBtn" formmethod="dialog" value="confirm" class="px-4 py-2 text-sm rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200">Confirm</button>
-				</div>
+				<button type="submit" class="btn btn--pink composer__send" title="Send (Enter)">
+					<span class="composer__send-label">Send</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M3 11 21 3l-8 18-2-8-8-2z"/></svg>
+				</button>
 			</form>
-		</dialog>
+		</footer>
+	</div>
 
-		<div class="fixed bottom-4 md:bottom-10 left-2 md:left-10 right-2 md:right-10">
-			<div id="conn-stat" class="absolute bottom-full right-0 mb-1 px-2 py-0.5 rounded text-xs bg-gray-800 text-gray-400">Connecting...</div>
-			<form
-				id="msgform"
-				onsubmit="handleSubmit(event)"
-				class="flex items-end rounded-xl overflow-hidden bg-gray-900 border border-gray-800">
-				<textarea
-					onkeydown="handleKeyPressEvent(event)"
-					class="grow bg-transparent px-4 py-3 text-sm text-white placeholder-gray-600 resize-none outline-none max-h-40"
-					placeholder="Type a message..."
-					rows="1"
-					id="msgbox"></textarea>
-				<button type="submit" class="shrink-0 px-4 py-3 text-sm text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer">Send</button>
-			</form>
-		</div>
+	<dialog id="encKeyDia" class="dialog" aria-labelledby="enc-title">
+		<form method="dialog" class="card dialog__card">
+			<div class="card__bar card__bar--yellow">
+				<span class="card__bar-title" id="enc-title">Encryption key</span>
+				<button type="button" class="dialog__x" id="enc-close" title="Close" aria-label="Close">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="square" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg>
+				</button>
+			</div>
+			<div class="card__body">
+				<p id="message" class="alert alert--inline" role="alert" hidden></p>
+				<p class="dialog__text">Messages are encrypted in your browser before they leave. Everyone in the room needs the <b>same key</b>. Leave it empty to send plain text.</p>
+				<div class="field">
+					<label class="field__label" for="enckey">Key</label>
+					<div class="input-prefix">
+						<input id="enckey" class="input" type="password" placeholder="Shared secret" autocomplete="off" spellcheck="false" autofocus>
+						<button type="button" class="input-prefix__btn" id="enckey-toggle" aria-label="Show key" title="Show key">
+							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+						</button>
+					</div>
+				</div>
+				<div class="dialog__actions">
+					<button type="button" class="btn btn--white" id="enc-cancel" value="cancel">Cancel</button>
+					<button class="btn btn--yellow" id="confirmBtn" value="confirm" formmethod="dialog">Confirm</button>
+				</div>
+			</div>
+		</form>
+	</dialog>
 
-		<script>
-			window.chatdata = {
-				room_id: {{ .RoomID }},
-				user_id: {{ .UserID }},
-				username: {{ .Username }},
-			}
-		</script>
-		<script src="/static/wasm_exec.js"></script>
-		<script src="/static/index.js" ></script>
-	</body>
-	</html>
+	<script>
+		window.chatdata = {
+			room_id: {{ .RoomID }},
+			user_id: {{ .UserID }},
+			username: {{ .Username }},
+		}
+	</script>
+	<script src="/static/wasm_exec.js"></script>
+	<script src="/static/index.js"></script>
+</body>
+</html>
 {{ end }}

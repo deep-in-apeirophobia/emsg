@@ -1,65 +1,92 @@
 {{ define "chat" }}
-	<!DOCTYPE html>
-	<html>
-	<head>
-			<title>MsgKas: {{ .RoomID }}</title>
-			<meta name="viewport" content="width=device-width, initial-scale=1">
-			<!-- For use in IRAN behind GFW -->
-			<!-- <script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js" ></script> -->
-			<!-- <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> -->
-			<script src="/static/tailwind4.1.10.global.js" ></script>
-	</head>
-	<body class="bg-gray-950 text-white min-h-screen p-1 xl:p-6" >
-		<div id="messages" class="flex flex-col overflow-auto pb-36">
-			<div class="text-slate-300 text-2xl p-4 text-center">Welcome to {{ .RoomID }} </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<meta name="color-scheme" content="light dark">
+	<title>{{ .RoomID }} &middot; The emsg Dispatch</title>
+	<link rel="stylesheet" href="/static/editorial.css">
+</head>
+<body class="page-chat">
+	<header class="masthead">
+		<div class="column masthead-inner">
+			<div class="masthead-top">
+				<a class="masthead-title" href="/" title="Back to the cover">The emsg <em>Dispatch</em></a>
+				<button type="button" class="btn-key" command="show-modal" commandfor="encKeyDia" aria-haspopup="dialog" title="Encryption key">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8"/><path d="m17 6 3 3"/><path d="m14.5 8.5 2 2"/></svg>
+					<span class="btn-key-text" id="key-state">Cipher: off</span>
+				</button>
+			</div>
+			<div class="dateline">
+				<span><span class="label">Room</span> <strong class="room-name">{{ .RoomID }}</strong></span>
+				<span class="sep" aria-hidden="true">&middot;</span>
+				<span><span class="label">Correspondent</span> <span class="me-name" data-entities>{{ .Username }}</span></span>
+				<span class="sep hide-sm" aria-hidden="true">&middot;</span>
+				<span class="hide-sm" id="dateline-date"></span>
+			</div>
 		</div>
+	</header>
 
-		<button class="fixed top-3 right-3 p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors duration-200" command="show-modal" commandfor="encKeyDia" title="Encryption key">
-			<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.4 2.7a2.5 2.5 0 0 1 3.4 0l5.5 5.5a2.5 2.5 0 0 1 0 3.4l-3.7 3.7a2.5 2.5 0 0 1-3.4 0L8.7 9.8a2.5 2.5 0 0 1 0-3.4z"/><path d="m14 7 3 3"/><path d="m9.4 10.6-6.814 6.814A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814"/></svg>
-		</button>
+	<main id="messages" class="transcript" aria-live="polite" aria-label="Messages">
+		<div class="column transcript-inner" id="transcript">
+			<section class="welcome">
+				<p class="welcome-orn" aria-hidden="true">❦</p>
+				<p class="label">Front page</p>
+				<h1 class="welcome-title">Welcome to <em>{{ .RoomID }}</em></h1>
+				<p class="welcome-deck">Letters appear below as they arrive. Share the room name with others on the network to bring them into the conversation.</p>
+			</section>
+		</div>
+	</main>
 
-		<dialog id="encKeyDia" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm rounded-xl bg-gray-900 border border-gray-800 text-white shadow-xl p-0 backdrop:bg-black/60">
-			<form class="flex flex-col gap-4 p-6">
-				<div class="flex flex-col gap-1">
-					<h3 class="text-base font-semibold text-white">Encryption key required</h3>
-					<p id="message" class="text-sm text-gray-400"></p>
-				</div>
-				<div class="flex flex-col gap-1.5">
-					<label for="enckey" class="text-xs font-medium text-gray-400 uppercase tracking-wide">Key</label>
-					<input id="enckey" type="password" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-gray-500 transition-colors duration-200" placeholder="Enter encryption key">
-				</div>
-				<div class="flex gap-2 justify-end">
-					<button value="cancel" formmethod="dialog" class="px-4 py-2 text-sm rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors duration-200">Cancel</button>
-					<button id="confirmBtn" formmethod="dialog" value="confirm" class="px-4 py-2 text-sm rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200">Confirm</button>
-				</div>
-			</form>
-		</dialog>
-
-		<div class="fixed bottom-4 md:bottom-10 left-2 md:left-10 right-2 md:right-10">
-			<div id="conn-stat" class="absolute bottom-full right-0 mb-1 px-2 py-0.5 rounded text-xs bg-gray-800 text-gray-400">Connecting...</div>
-			<form
-				id="msgform"
-				onsubmit="handleSubmit(event)"
-				class="flex items-end rounded-xl overflow-hidden bg-gray-900 border border-gray-800">
+	<footer class="composer">
+		<div class="column">
+			<div id="conn-stat" class="conn-stat" role="status">
+				<span class="label">Stop press</span>
+				<span class="conn-text">Connecting...</span>
+			</div>
+			<form id="msgform" class="pad" onsubmit="handleSubmit(event)" autocomplete="off">
+				<label for="msgbox" class="visually-hidden">Message</label>
 				<textarea
-					onkeydown="handleKeyPressEvent(event)"
-					class="grow bg-transparent px-4 py-3 text-sm text-white placeholder-gray-600 resize-none outline-none max-h-40"
-					placeholder="Type a message..."
+					id="msgbox"
 					rows="1"
-					id="msgbox"></textarea>
-				<button type="submit" class="shrink-0 px-4 py-3 text-sm text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer">Send</button>
+					placeholder="Write to the room&hellip;"
+					onkeydown="handleKeyPressEvent(event)"></textarea>
+				<div class="pad-foot">
+					<p class="pad-hint"><kbd>Enter</kbd> to send &middot; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> for a new line</p>
+					<button type="submit" class="btn-send">Send <span aria-hidden="true">&crarr;</span></button>
+				</div>
 			</form>
 		</div>
+	</footer>
 
-		<script>
-			window.chatdata = {
-				room_id: {{ .RoomID }},
-				user_id: {{ .UserID }},
-				username: {{ .Username }},
-			}
-		</script>
-		<script src="/static/wasm_exec.js"></script>
-		<script src="/static/index.js" ></script>
-	</body>
-	</html>
+	<dialog id="encKeyDia" class="card" aria-labelledby="enc-title">
+		<form method="dialog" class="card-form">
+			<p class="label">Private correspondence</p>
+			<h2 id="enc-title" class="card-title">Encryption key</h2>
+			<hr class="rule">
+			<p id="message" class="card-message"></p>
+			<div class="field">
+				<label for="enckey" class="label">Shared key</label>
+				<input id="enckey" type="password" autocomplete="off" placeholder="Enter the room&rsquo;s key">
+				<p class="field-hint">Leave empty to write in plain text.</p>
+			</div>
+			<div class="card-actions">
+				<button value="cancel" formmethod="dialog" class="btn btn-quiet">Cancel</button>
+				<button id="confirmBtn" formmethod="dialog" value="confirm" class="btn btn-ink">Confirm</button>
+			</div>
+		</form>
+	</dialog>
+
+	<script>
+		window.chatdata = {
+			room_id: {{ .RoomID }},
+			user_id: {{ .UserID }},
+			username: {{ .Username }},
+		}
+	</script>
+	<script src="/static/wasm_exec.js"></script>
+	<script src="/static/index.js"></script>
+</body>
+</html>
 {{ end }}

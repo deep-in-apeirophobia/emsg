@@ -1,51 +1,88 @@
 {{ define "home_logged_in" }}
-	<div>
-		Logged in as {{ .Username }} ({{ .UserID }})
+	<div class="byline-card">
+		<span class="label">Signed in as</span>
+		<p class="byline-name"><span class="name" data-entities>{{ .Username }}</span></p>
+		<p class="byline-note">Choose a room below to carry on the correspondence.</p>
 	</div>
 {{ end }}
 {{ define "home_login" }}
-	<div class="flex gap-2 flex-col">
-		<label for="username">
-			Username
-		</label>
-		<input name="username" class="bg-sky-300/10 hover:bg-sky-300/20
-		transition-all duration-300 rounded-md p-2"></input>
+	<div class="field">
+		<label for="username" class="label">Your name</label>
+		<input id="username" name="username" autocomplete="nickname" autocapitalize="off" spellcheck="false" placeholder="e.g. Ada">
 	</div>
 {{ end }}
 {{ define "home" }}
-	<!DOCTYPE html>
-	<html>
-	<head>
-			<title>Message Kaskade</title>
-			<!-- <script src="https://gitcdn.ir/library/jquery/3.5.1/jquery-3.5.1.min.js"></script> -->
-			<meta name="viewport" content="width=device-width, initial-scale=1">
-			<!-- <script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js"></script> -->
-			<script src="/static/tailwind4.1.10.global.js" ></script>
-			<script src="/static/jquery3.5.1.min.js" ></script>
-	</head>
-	<body class="flex items-center justify-center py-4 px-2 min-h-screen bg-gray-950 text-white">
-		<form method="post" to="/login" class="w-full max-w-md rounded-sm bg-blue-600/10 rounded-md bg-clip-padding backdrop-filter backdrop-blur-2xl bg-opacity-10 border border-gray-100 flex flex-col gap-2 p-4 mx-auto"> 
-			{{if .IsLoggedIn}}
-				{{ template "home_logged_in" . }}
-			{{else}}
-				{{ template "home_login" }}
-			{{end}}
-			<div class="flex gap-2 flex-col">
-				<label for="roomid">
-					Room ID
-				</label>
-				<input name="roomid" class="bg-sky-300/10 hover:bg-sky-300/20
-				transition-all duration-300 rounded-md p-2" value="{{ .RoomID }}"></div>
-			</div>
-			
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="color-scheme" content="light dark">
+	<title>The emsg Dispatch</title>
+	<link rel="stylesheet" href="/static/editorial.css">
+</head>
+<body class="page-home">
+	<main class="cover">
+		<div class="cover-folio">
+			<span>Vol. I &middot; No. 1</span>
+			<span class="folio-mid">Local Network Edition</span>
+			<span id="folio-date">Emergency Messenger</span>
+		</div>
+		<hr class="rule-double">
+
+		<header class="cover-head">
+			<p class="cover-kicker">Correspondence, when the lines are down</p>
+			<h1 class="cover-title"><span class="the">The</span> emsg <em>Dispatch</em></h1>
+			<p class="cover-deck">A small chat room that runs on your own network. Pick a name, name a room, and write&thinsp;&mdash;&thinsp;with an optional shared cipher for private letters.</p>
+		</header>
+
+		<hr class="rule">
+
+		<form method="post" class="signin{{ if .IsLoggedIn }} is-logged-in{{ end }}">
+			<h2 class="section-label"><span>{{ if .IsLoggedIn }}Return to the rooms{{ else }}Sign in{{ end }}</span></h2>
+
 			{{ if .Error }}
-				<p class="text-red-400">
-					{{ .ErrorMessage }}
-				</p>
+			<p class="erratum" role="alert"><span class="label">Erratum</span> {{ .ErrorMessage }}</p>
 			{{ end }}
-			<button type="submit" 
-				class="p-2 hover:bg-sky-500/20 transition-all duration-300 rounded-lg cursor-pointer">Enter</button>
+
+			<div class="signin-fields">
+				{{ if .IsLoggedIn }}
+					{{ template "home_logged_in" . }}
+				{{ else }}
+					{{ template "home_login" }}
+				{{ end }}
+				<div class="field">
+					<label for="roomid" class="label">Room</label>
+					<input id="roomid" name="roomid" value="{{ .RoomID }}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="e.g. lobby">
+				</div>
+			</div>
+
+			<div class="signin-foot">
+				<p class="fineprint">Everyone who enters the same room reads the same page.</p>
+				<button type="submit" class="btn btn-ink">Enter the room <span aria-hidden="true">&rarr;</span></button>
+			</div>
 		</form>
-	</body>
-	</html>
+
+		<footer class="cover-foot">
+			<span aria-hidden="true">❦</span>
+		</footer>
+	</main>
+	<script>
+		(function () {
+			try {
+				var el = document.getElementById("folio-date");
+				var narrow = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+				el.textContent = new Date().toLocaleDateString(undefined, narrow
+					? { day: "numeric", month: "short", year: "numeric" }
+					: { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+			} catch (e) {}
+			document.querySelectorAll("[data-entities]").forEach(function (el) {
+				try {
+					el.textContent = new DOMParser().parseFromString(el.textContent, "text/html").documentElement.textContent;
+				} catch (e) {}
+			});
+		})();
+	</script>
+</body>
+</html>
 {{ end }}

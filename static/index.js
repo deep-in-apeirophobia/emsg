@@ -1,187 +1,309 @@
+"use strict";
+
 var sock,
-	pingTimeout,
-	isAlive = false;
+	isAlive = false,
+	wasConnected = false;
 
 if ("Notification" in window) {
-	Notification.requestPermission().then((permission) => {
-		console.log("Notification permission", permission);
-	});
+	try {
+		Notification.requestPermission().then((permission) => {
+			console.log("Notification permission", permission);
+		});
+	} catch (e) {
+		console.log("Notification permission request failed");
+	}
 }
 
 const msgcnt = document.getElementById("messages");
+const msgbox = document.getElementById("msgbox");
+const msgform = document.getElementById("msgform");
 
 const encModal = document.getElementById("encKeyDia");
-const encInput = encModal.querySelector("input")
-const encMessage = encModal.querySelector("#message")
-const encConfirmBtn = encModal.querySelector("#confirmBtn")
+const encInput = encModal.querySelector("#enckey");
+const encMessage = encModal.querySelector("#message");
+const encState = document.getElementById("enc-state");
+const encOpenBtn = document.querySelector('[commandfor="encKeyDia"]');
 
-var encryptionKey = ""
-var encryptionLoaded = false
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-const go = new Go()
+var encryptionKey = "";
+
+/* ------------------------------------------------------------------
+ * Encryption module (Go wasm). Loaded exactly once; callers await it.
+ * ------------------------------------------------------------------ */
+
+const go = new Go();
+var encryptionReady = null;
+
+function loadEncryptionModule() {
+	if (!encryptionReady) {
+		const source = fetch("/static/kasenc.wasm");
+		const inst = WebAssembly.instantiateStreaming
+			? WebAssembly.instantiateStreaming(source, go.importObject)
+			: source
+				.then((r) => r.arrayBuffer())
+				.then((buf) => WebAssembly.instantiate(buf, go.importObject));
+		encryptionReady = inst
+			.then((result) => {
+				go.run(result.instance);
+				return true;
+			})
+			.catch((err) => {
+				encryptionReady = null;
+				throw err;
+			});
+	}
+	return encryptionReady;
+}
+
+function decryptInto(el) {
+	const res = AESDecrypt(el.dataset.encval, encryptionKey);
+	if (res.error) {
+		el.textContent = "[unable to decrypt: " + res.error + "]";
+		el.dataset.encfailed = "true";
+		return res.error;
+	}
+	delete el.dataset.encfailed;
+	el.textContent = res.result;
+	return null;
+}
 
 function updateEncryptionKey(newkey) {
 	encryptionKey = newkey;
+	document.body.dataset.enc = encryptionKey ? "on" : "off";
+	encState.textContent = encryptionKey ? "on" : "off";
 
-	const failedmessages = msgcnt.querySelectorAll("span[data-encfailed]")
-
-	for (let msg of failedmessages) {
-		const res = AESDecrypt(msg.dataset.encval, encryptionKey)
-		if (res.error) {
-			msg.innerText = res.error;
-			msg.dataset.encfailed = true;
-		} else {
-			delete msg.dataset.encfailed;
-			msg.innerText = res.result;
-		}
-	}
-
+	const failed = msgcnt.querySelectorAll(".msg[data-encfailed]");
+	if (failed.length === 0) return;
+	loadEncryptionModule().then(() => {
+		for (const el of failed) decryptInto(el);
+	});
 }
 
-encModal.addEventListener("close", (e) => {
-	if (encModal.returnValue == "cancel")
-		return
-	if (encModal.returnValue)
-		updateEncryptionKey(encInput.value)
-})
+/* ------------------------------------------------------------------
+ * Key dialog
+ * ------------------------------------------------------------------ */
 
-const userColors = [
-	"text-blue-400",
-	"text-gray-400",
-	"text-sky-400",
-	"text-rose-400",
-	"text-yellow-400",
-	"text-violet-400",
-	"text-pink-400",
-	"text-purple-400",
-	"text-green-400",
-	"text-lime-400",
-	"text-brown-400",
-];
+function openKeyDialog(message) {
+	if (typeof message === "string") encMessage.textContent = message;
+	if (!encModal.open) {
+		encModal.returnValue = "";
+		encModal.showModal();
+	}
+}
+
+// Fallback for browsers without invoker commands (command/commandfor).
+// Deferred so a native invoker gets the first chance; never double-opens.
+encOpenBtn.addEventListener("click", () => {
+	encMessage.textContent = "";
+	encInput.value = encryptionKey;
+	setTimeout(() => {
+		if (!encModal.open) openKeyDialog();
+	}, 0);
+});
+
+encModal.addEventListener("close", () => {
+	const rv = encModal.returnValue;
+	encModal.returnValue = "";
+	if (rv === "confirm") updateEncryptionKey(encInput.value);
+	else encInput.value = encryptionKey;
+});
+
+/* ------------------------------------------------------------------
+ * Rendering
+ * ------------------------------------------------------------------ */
+
+const USER_COLORS = 10; // .c0 … .c9 in terminal.css
 
 function getUserColor(id) {
 	let val = 0;
-
-	for (let ch in id) {
-		val = val * 713 + Number(id.charCodeAt(ch));
+	const s = String(id || "");
+	for (let i = 0; i < s.length; i++) {
+		val = (val * 31 + s.charCodeAt(i)) >>> 0;
 	}
-	return userColors[val % userColors.length];
+	return "c" + (val % USER_COLORS);
 }
 
-function handleJoinMessage(msg) {
-	const newmsg = document.createElement("div");
-	newmsg.classList.add("text-center", "text-gray-400", "text-sm", "p-1");
-	newmsg.innerText = msg.message;
-	msgcnt.appendChild(newmsg);
+function pad(n) {
+	return n < 10 ? "0" + n : "" + n;
+}
 
-	if (msg.user_id !== window.chatdata.user_id) {
-		try {
-			const notif = new Notification(
-				`${msg.username} (${msg.user_id.slice(0, 5)}) joined the room`,
-			);
-		} catch (e) {
-			console.log("Failed to create notification");
+function nowStamp() {
+	const d = new Date();
+	return pad(d.getHours()) + ":" + pad(d.getMinutes());
+}
+
+// The server HTML-escapes usernames and plain-text messages before relaying
+// them. We render with textContent (never innerHTML), so decode the entities
+// once. A detached <textarea> parses its content as RCDATA: tags stay inert
+// text, only character references are decoded.
+const entityDecoder = document.createElement("textarea");
+function decodeEntities(str) {
+	if (str == null) return "";
+	str = String(str);
+	if (str.indexOf("&") === -1) return str;
+	entityDecoder.innerHTML = str;
+	return entityDecoder.value;
+}
+
+function el(tag, cls, text) {
+	const e = document.createElement(tag);
+	if (cls) e.className = cls;
+	if (text != null) e.textContent = text;
+	return e;
+}
+
+function isNearBottom() {
+	return msgcnt.scrollHeight - msgcnt.scrollTop - msgcnt.clientHeight < 120;
+}
+
+function scrollToNewest(force) {
+	if (!force && !isNearBottom()) return;
+	msgcnt.scrollTo({
+		top: msgcnt.scrollHeight,
+		behavior: reduceMotion.matches ? "auto" : "smooth",
+	});
+}
+
+function appendLine(line, forceScroll) {
+	const stick = forceScroll || isNearBottom();
+	msgcnt.appendChild(line);
+	if (stick) scrollToNewest(true);
+}
+
+function systemLine(kind, build) {
+	const line = el("div", "line sys " + kind);
+	line.appendChild(el("span", "ts", nowStamp()));
+	const nick = el("span", "nick");
+	nick.appendChild(el("span", "bang", "-!-"));
+	line.appendChild(nick);
+	const text = el("span", "text");
+	build(text);
+	line.appendChild(text);
+	appendLine(line);
+	return line;
+}
+
+function notify(text) {
+	if (!("Notification" in window) || Notification.permission !== "granted") return;
+	if (document.hasFocus()) return;
+	try {
+		new Notification(text);
+	} catch (e) {
+		console.log("Failed to create notification");
+	}
+}
+
+// Server presence text looks like "alice (abc1234) joined the chat!".
+const PRESENCE_RE = /^(.*) \(([^)]*)\) (joined|left) the chat!?$/;
+
+function handlePresence(msg, forceLeave) {
+	// presence text contains the (already escaped) username, escaped again
+	const raw = decodeEntities(decodeEntities(msg.message));
+	const m = raw.match(PRESENCE_RE);
+	const left = forceLeave || (m && m[3] === "left");
+	const isSelf = msg.user_id
+		? msg.user_id === window.chatdata.user_id
+		: !!(m && m[2] && window.chatdata.user_id.slice(0, m[2].length) === m[2]);
+
+	systemLine(left ? "leave" : "join", (text) => {
+		if (!m) {
+			text.textContent = raw;
+			return;
 		}
-	}
-}
-function handleLeaveMessage(msg) {
-	const newmsg = document.createElement("div");
-	newmsg.classList.add("text-center", "text-red-400", "text-sm", "p-1");
-	newmsg.innerText = msg.message;
-	msgcnt.appendChild(newmsg);
-
-	if (msg.user_id !== window.chatdata.user_id) {
-		try {
-			const notif = new Notification(
-				`${msg.username} (${msg.user_id.slice(0, 5)}) left the room`,
-			);
-		} catch (e) {
-			console.log("Failed to create notification");
-		}
-	}
-}
-
-async function handleUserMessage(msg) {
-	const newmsg = document.createElement("div");
-	newmsg.classList.add("text-base", "text-white", "p-1");
-
-	if (msg.user_id === window.chatdata.user_id) {
-		newmsg.classList.add(
-			"hover:bg-blue-600/20",
-			"bg-blue-600/10",
-			"rounded-md",
-			"bg-clip-padding",
-			"backdrop-filter",
-			"backdrop-blur-2xl",
-			"bg-opacity-10",
+		text.appendChild(el("span", "who", m[1]));
+		text.appendChild(el("span", "faint", " [" + m[2] + "]"));
+		text.appendChild(
+			document.createTextNode(
+				left
+					? " has quit #" + window.chatdata.room_id
+					: " has joined #" + window.chatdata.room_id,
+			),
 		);
-	} else {
-		newmsg.classList.add("hover:bg-slate-800");
-	}
-
-	const color = getUserColor(msg.user_id);
-	const username = document.createElement("span");
-	username.classList.add("text-base", "font-semibold", color);
-	username.innerText = msg.username;
-	newmsg.appendChild(username);
-
-	const userid = document.createElement("span");
-	userid.classList.add("text-base", color);
-	userid.innerText = ` (${msg.user_id.slice(0, 5)}): `;
-	newmsg.appendChild(userid);
-
-	const msgtext = document.createElement("span");
-	msgtext.classList.add("message")
-	if (msg.type === "ENCRYPTED_MESSAGE") {
-		msgtext.dataset.encval = msg.message;
-		if (!encryptionLoaded || !AESDecrypt) {
-			await loadEncryptionModule()
-
-		}
-		const res = AESDecrypt(msg.message, encryptionKey)
-		if (res.error) {
-			msgtext.innerText = res.error;
-			msgtext.dataset.encfailed = true;
-			encMessage.innerText = "Decryption failed: " + res.error
-			encModal.showModal()
-		} else
-			msgtext.innerText = res.result;
-	} else {
-		msgtext.innerHTML = msg.message;
-	}
-	newmsg.appendChild(msgtext);
-
-	msgcnt.appendChild(newmsg);
-	newmsg.scrollIntoView({
-		behavior: "smooth",
 	});
 
-	if (msg.user_id !== window.chatdata.user_id) {
-		try {
-			const notif = new Notification(
-				`New message from ${msg.username} (${msg.user_id.slice(0, 5)})`,
-			);
-		} catch (e) {
-			console.log("Failed to create notification");
-		}
+	if (!isSelf && raw) notify(raw);
+}
+
+function handleUserMessage(msg) {
+	const isSelf = msg.user_id === window.chatdata.user_id;
+	const username = decodeEntities(msg.username) || "?";
+	const line = el("div", "line " + (isSelf ? "self" : "other"));
+	line.appendChild(el("span", "ts", nowStamp()));
+
+	const nick = el("span", "nick " + (isSelf ? "" : getUserColor(msg.user_id)));
+	nick.title = username + " (" + String(msg.user_id || "").slice(0, 7) + ")";
+	nick.appendChild(el("span", "br", "<"));
+	nick.appendChild(el("span", "name", username));
+	nick.appendChild(el("span", "br", ">"));
+	line.appendChild(nick);
+
+	const body = el("span", "text");
+	const text = el("span", "msg");
+	if (msg.type === "ENCRYPTED_MESSAGE") {
+		const tag = el("span", "enc-tag", "[e2e]");
+		tag.title = "End-to-end encrypted";
+		body.appendChild(tag);
+		text.dataset.encval = msg.message;
+		text.textContent = "decrypting…";
+		loadEncryptionModule().then(
+			() => {
+				const err = decryptInto(text);
+				if (err) openKeyDialog("Decryption failed: " + err);
+			},
+			() => {
+				text.textContent = "[encryption module failed to load]";
+				text.dataset.encfailed = "true";
+			},
+		);
+	} else {
+		text.textContent = decodeEntities(msg.message);
+	}
+	body.appendChild(text);
+	line.appendChild(body);
+
+	appendLine(line, isSelf);
+
+	if (!isSelf) {
+		notify(
+			`New message from ${username} (${String(msg.user_id || "").slice(0, 5)})`,
+		);
 	}
 }
 
 function handleMessage(e) {
-	const msg = JSON.parse(e.data);
+	let msg;
+	try {
+		msg = JSON.parse(e.data);
+	} catch (err) {
+		return;
+	}
 
 	if (msg.type === "PONG") {
 		isAlive = true;
-		return;
 	} else if (msg.type === "JOINED") {
-		return handleJoinMessage(msg);
+		handlePresence(msg, false);
 	} else if (msg.type === "LEFT") {
-		return handleLeaveMessage(msg);
-	} else if (msg.type === "TEXT_MESSAGE") {
-		return handleUserMessage(msg);
-	} else if (msg.type === "ENCRYPTED_MESSAGE") {
-		return handleUserMessage(msg);
+		handlePresence(msg, true);
+	} else if (msg.type === "TEXT_MESSAGE" || msg.type === "ENCRYPTED_MESSAGE") {
+		handleUserMessage(msg);
 	}
+}
+
+/* ------------------------------------------------------------------
+ * Connection: keepalive + auto-reconnect
+ * ------------------------------------------------------------------ */
+
+function setConnected(up) {
+	document.body.dataset.conn = up ? "up" : "down";
+	if (up && !wasConnected) {
+		if (msgcnt.querySelector(".line.warn")) {
+			systemLine("good", (t) => (t.textContent = "Reconnected to relay."));
+		}
+	} else if (!up && wasConnected) {
+		systemLine("warn", (t) => (t.textContent = "Connection lost. Reconnecting…"));
+	}
+	wasConnected = up;
 }
 
 function waitForConnection(callback, interval) {
@@ -192,105 +314,117 @@ function waitForConnection(callback, interval) {
 	}
 }
 
-function pingInterval(interval = 5000) {
+function pingInterval(ws, interval = 5000) {
+	if (ws !== sock) return; // a newer socket took over
 	if (!isAlive) {
-		sock.close();
+		ws.close();
 		return;
 	}
 	isAlive = false;
-
-	sock.send(
-		JSON.stringify({
-			type: "PING",
-		}),
-	);
-	setTimeout(() => pingInterval(interval), interval);
+	try {
+		ws.send(JSON.stringify({ type: "PING" }));
+	} catch (e) {
+		ws.close();
+		return;
+	}
+	setTimeout(() => pingInterval(ws, interval), interval);
 }
 
 function init() {
-	sock = new WebSocket(`/ws/${window.chatdata.room_id}`);
+	const ws = new WebSocket(`/ws/${encodeURIComponent(window.chatdata.room_id)}`);
+	sock = ws;
 
-	sock.addEventListener("open", function() {
-		document.getElementById("conn-stat").classList.add("hidden");
-		waitForConnection(function() {
+	ws.addEventListener("open", function () {
+		setConnected(true);
+		waitForConnection(function () {
 			isAlive = true;
-			pingInterval();
+			pingInterval(ws);
 		}, 300);
 	});
 
-	sock.addEventListener("close", function() {
-		sock.removeEventListener("message", handleMessage);
-		document.getElementById("conn-stat").classList.remove("hidden");
+	ws.addEventListener("close", function () {
+		ws.removeEventListener("message", handleMessage);
+		if (ws !== sock) return;
+		setConnected(false);
 		setTimeout(() => {
 			init();
 		}, 300);
 	});
-	sock.addEventListener("message", handleMessage);
+	ws.addEventListener("message", handleMessage);
 }
 
-function handleSubmit(e) {
-	e.preventDefault();
-	if (!sock) return;
-	const input = document.getElementById("msgbox");
-	const text = input.value;
+/* ------------------------------------------------------------------
+ * Composer
+ * ------------------------------------------------------------------ */
 
+function autoGrow() {
+	msgbox.style.height = "auto";
+	const max = parseFloat(getComputedStyle(msgbox).maxHeight) || 240;
+	const h = Math.min(msgbox.scrollHeight, max);
+	msgbox.style.height = h + "px";
+	msgbox.style.overflowY = msgbox.scrollHeight > max ? "auto" : "hidden";
+}
+
+async function handleSubmit(e) {
+	e.preventDefault();
+	if (!sock || sock.readyState !== 1) return;
+	const text = msgbox.value;
+	if (!text.trim()) return;
+
+	let payload;
 	if (encryptionKey) {
-		const result = AESEncrypt(text, encryptionKey)
-		if (result.result) {
-			sock.send(
-				JSON.stringify({
-					...window.chatdata,
-					message: result.result,
-					type: "ENCRYPTED_MESSAGE",
-				}),
-			);
-		} else {
-			console.error(result.error)
+		try {
+			await loadEncryptionModule();
+		} catch (err) {
+			openKeyDialog("Encryption module failed to load.");
 			return;
 		}
+		const result = AESEncrypt(text, encryptionKey);
+		if (!result.result) {
+			console.error(result.error);
+			openKeyDialog("Encryption failed: " + result.error);
+			return;
+		}
+		payload = { ...window.chatdata, message: result.result, type: "ENCRYPTED_MESSAGE" };
 	} else {
-		sock.send(
-			JSON.stringify({
-				...window.chatdata,
-				message: text,
-				type: "TEXT_MESSAGE",
-			}),
-		);
+		payload = { ...window.chatdata, message: text, type: "TEXT_MESSAGE" };
 	}
 
-	input.value = "";
+	sock.send(JSON.stringify(payload));
+	msgbox.value = "";
+	autoGrow();
 }
 
 function handleKeyPressEvent(e) {
-	const input = document.getElementById("msgbox");
-	if (e.key === "Enter") {
-		if (e.metaKey || e.ctrlKey) {
-			e.preventDefault();
-			const start = input.selectionStart;
-			const end = input.selectionEnd;
-
-			input.value =
-				input.value.substring(0, start) + "\n" + input.value.substring(end);
-
-			input.selectionStart = input.selectionEnd = start + 1;
-		} else {
-			// handleSubmit(e);
-			document.getElementById("msgform").requestSubmit();
-			e.preventDefault();
-		}
+	if (e.key !== "Enter" || e.isComposing) return;
+	e.preventDefault();
+	if (e.metaKey || e.ctrlKey) {
+		const start = msgbox.selectionStart;
+		const end = msgbox.selectionEnd;
+		msgbox.value = msgbox.value.substring(0, start) + "\n" + msgbox.value.substring(end);
+		msgbox.selectionStart = msgbox.selectionEnd = start + 1;
+		autoGrow();
+	} else {
+		msgform.requestSubmit();
 	}
 }
 
+msgform.addEventListener("submit", handleSubmit);
+msgbox.addEventListener("keydown", handleKeyPressEvent);
+msgbox.addEventListener("input", autoGrow);
 
-function loadEncryptionModule() {
-	return WebAssembly.instantiateStreaming(fetch("/static/kasenc.wasm"), go.importObject)
-		.then(result => {
-			go.run(result.instance);
-			encryptionLoaded = true
-			return true
-		});
-
+/* the stored username is HTML-escaped by the server; show it decoded */
+for (const n of document.querySelectorAll("[data-uname]")) {
+	n.textContent = decodeEntities(window.chatdata.username);
 }
-loadEncryptionModule()
 
+/* status-line clock */
+const clock = document.getElementById("clock");
+function tick() {
+	clock.textContent = nowStamp();
+	setTimeout(tick, 60000 - (Date.now() % 60000) + 50);
+}
+tick();
+
+loadEncryptionModule().catch((err) => console.error("kasenc load failed", err));
 init();

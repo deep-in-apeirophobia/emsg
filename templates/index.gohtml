@@ -1,51 +1,81 @@
 {{ define "home_logged_in" }}
-	<div>
-		Logged in as {{ .Username }} ({{ .UserID }})
+	<div class="slip-row on-file">
+		<p class="slip-q"><span class="num">1.</span> OPERATOR ON FILE</p>
+		<p class="slip-a"><b data-uname>{{ .Username }}</b> <span class="faint">SESSION {{ slice .UserID 0 7 }}…</span></p>
+		<p class="stamp stamp-ok" aria-hidden="true">ON FILE</p>
 	</div>
 {{ end }}
 {{ define "home_login" }}
-	<div class="flex gap-2 flex-col">
-		<label for="username">
-			Username
-		</label>
-		<input name="username" class="bg-sky-300/10 hover:bg-sky-300/20
-		transition-all duration-300 rounded-md p-2"></input>
+	<div class="slip-row">
+		<label class="slip-q" for="username"><span class="num">1.</span> OPERATOR NAME <span class="faint">(PRINT CLEARLY)</span></label>
+		<input id="username" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="your handle" required autofocus>
 	</div>
 {{ end }}
 {{ define "home" }}
 	<!DOCTYPE html>
-	<html>
+	<html lang="en">
 	<head>
-			<title>Message Kaskade</title>
-			<!-- <script src="https://gitcdn.ir/library/jquery/3.5.1/jquery-3.5.1.min.js"></script> -->
-			<meta name="viewport" content="width=device-width, initial-scale=1">
-			<!-- <script src="https://gitcdn.ir/library/tailwindcss/4.1.10/index.global.js"></script> -->
-			<script src="/static/tailwind4.1.10.global.js" ></script>
-			<script src="/static/jquery3.5.1.min.js" ></script>
+		<meta charset="utf-8">
+		<title>EMSG · Log-in Slip</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="color-scheme" content="light dark">
+		<link rel="stylesheet" href="/static/terminal-teletype.css">
 	</head>
-	<body class="flex items-center justify-center py-4 px-2 min-h-screen bg-gray-950 text-white">
-		<form method="post" to="/login" class="w-full max-w-md rounded-sm bg-blue-600/10 rounded-md bg-clip-padding backdrop-filter backdrop-blur-2xl bg-opacity-10 border border-gray-100 flex flex-col gap-2 p-4 mx-auto"> 
-			{{if .IsLoggedIn}}
-				{{ template "home_logged_in" . }}
-			{{else}}
-				{{ template "home_login" }}
-			{{end}}
-			<div class="flex gap-2 flex-col">
-				<label for="roomid">
-					Room ID
-				</label>
-				<input name="roomid" class="bg-sky-300/10 hover:bg-sky-300/20
-				transition-all duration-300 rounded-md p-2" value="{{ .RoomID }}"></div>
-			</div>
-			
-			{{ if .Error }}
-				<p class="text-red-400">
-					{{ .ErrorMessage }}
-				</p>
-			{{ end }}
-			<button type="submit" 
-				class="p-2 hover:bg-sky-500/20 transition-all duration-300 rounded-lg cursor-pointer">Enter</button>
-		</form>
+	<body class="tty home">
+		<main class="slip-desk">
+			<form method="post" action="/" class="slip">
+				<div class="slip-paper paper-bg">
+					<header class="slip-head">
+						<div>
+							<h1>EMSG RELAY NETWORK</h1>
+							<p>OPERATOR LOG-IN SLIP</p>
+						</div>
+						<div class="slip-form">
+							<p>FORM TTY-1</p>
+							<p>REV 09/26</p>
+						</div>
+					</header>
+					<div class="rule rule-eq" aria-hidden="true"></div>
+
+					{{if .IsLoggedIn}}
+						{{ template "home_logged_in" . }}
+					{{else}}
+						{{ template "home_login" }}
+					{{end}}
+
+					<div class="slip-row">
+						<label class="slip-q" for="roomid"><span class="num">2.</span> ROOM / CHANNEL <span class="faint">(E.G. LOBBY)</span></label>
+						<input id="roomid" name="roomid" value="{{ .RoomID }}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="lobby" {{if .IsLoggedIn}}autofocus{{end}}>
+					</div>
+
+					{{ if .Error }}
+						<div class="slip-row slip-error" role="alert">
+							<p class="err">*** LOG-IN REJECTED: {{ .ErrorMessage }} ***</p>
+							<p class="stamp stamp-bad" aria-hidden="true">REJECTED</p>
+						</div>
+					{{ end }}
+
+					<div class="slip-actions">
+						<button type="submit" class="keycap key-send">{{if .IsLoggedIn}}JOIN ROOM{{else}}TRANSMIT{{end}} <span aria-hidden="true">&#9166;</span></button>
+						<span class="faint">OR PRESS RETURN</span>
+					</div>
+
+					<div class="rule rule-dash" aria-hidden="true"></div>
+					<p class="fine">MESSAGES ARE RELAYED LIVE TO OPERATORS IN THE SAME ROOM. NOTHING IS STORED. FOR PRIVATE TRAFFIC, LOAD A SHARED KEY CARD AFTER JOINING.</p>
+				</div>
+			</form>
+			<p class="desk-label" aria-hidden="true">EMSG · KASKADE RELAY · TTY-1</p>
+		</main>
+		<script>
+			// Stored usernames are HTML-escaped server-side; decode once for display.
+			(function () {
+				var t = document.createElement("textarea");
+				document.querySelectorAll("[data-uname]").forEach(function (n) {
+					t.innerHTML = n.textContent;
+					n.textContent = t.value;
+				});
+			})();
+		</script>
 	</body>
 	</html>
 {{ end }}
